@@ -1,6 +1,6 @@
 # Sistema Logístico Integral - Frontend
 
-Frontend del Sistema Logístico Integral construido con React, TypeScript y Vite.
+Frontend del Sistema Logístico Integral construido con **React 19**, **TypeScript** y **Vite**.
 
 ## ARCHITECTURE GOLDEN RULE
 
@@ -11,18 +11,39 @@ Frontend del Sistema Logístico Integral construido con React, TypeScript y Vite
 5. **Backend genera documentos:** PDFs, Excels y reportes se descargan o visualizan desde endpoints del backend.
 6. **Backend controla persistencia:** Transacciones y base de datos son gestionadas por FastAPI.
 7. **Backend es autoridad de permisos:** La UI puede ocultar elementos visuales, pero el backend valida cada solicitud.
-8. **Frontend solamente consume contratos API:** Exclusivamente capa de presentación e interacción de usuario.
+8. **Frontend solamente consume contratos API:** Exclusivamente capa de presentación e interacción de usuario (**FRONTEND IS PRESENTATION ONLY**).
 
-## Política de Variables de Entorno y Seguridad
+## Requisitos Técnicos
 
-- Las llamadas transaccionales se realizan exclusivamente a través de la API Backend (`VITE_API_URL`).
-- **NUNCA** incluir `DATABASE_URL`, contraseñas directas de PostgreSQL ni `SUPABASE_SERVICE_ROLE_KEY` en el frontend.
-- Los archivos `.env` locales están estrictamente ignorados por Git.
+- **Node.js:** >= 20 LTS (Recomendado Node 22 LTS)
+- **NPM:** >= 10
 
-## Configuración Local
+## Configuración del Entorno
 
-1. Copiar `.env.example` a `.env`:
+1. Copiar el archivo de plantilla `.env.example` a `.env`:
    ```bash
    cp .env.example .env
    ```
-2. Configurar la URL del backend (`VITE_API_URL=http://localhost:8000`).
+2. Configurar la URL de la API Backend en `.env`:
+   ```dotenv
+   VITE_API_URL=http://localhost:8000
+   ```
+
+## Instalación y Ejecución
+
+```bash
+# Instalar dependencias
+npm install
+
+# Iniciar servidor de desarrollo (puerto 5173)
+npm run dev
+
+# Ejecutar linter con ESLint
+npm run lint
+
+# Verificación de tipos con TypeScript
+npm run typecheck
+
+# Compilar para producción
+npm run build
+```
