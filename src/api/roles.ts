@@ -29,6 +29,26 @@ export interface RoleUpdate {
   is_active?: boolean;
 }
 
+export interface RoleResponsibilityItem {
+  role_code: string;
+  role_name: string;
+  responsibilities: string[];
+  operational_scope: string;
+}
+
+export interface SodConflictItem {
+  role_a: string;
+  role_b: string;
+  conflict_level: 'HIGH_RISK' | 'REVIEW_REQUIRED' | 'NONE';
+  reason: string;
+  policy: string;
+}
+
+export interface RoleMatrixResponse {
+  canonical_profiles: RoleResponsibilityItem[];
+  sod_conflicts: SodConflictItem[];
+}
+
 export interface ApiErrorResponse {
   code: string;
   message: string;
@@ -66,6 +86,11 @@ export const rolesApi = {
   getRole: async (roleId: string): Promise<RoleResponse> => {
     const res = await fetch(`${API_BASE_URL}/api/logistics/roles/${roleId}`);
     return handleResponse<RoleResponse>(res);
+  },
+
+  getMatrix: async (): Promise<RoleMatrixResponse> => {
+    const res = await fetch(`${API_BASE_URL}/api/logistics/roles/matrix`);
+    return handleResponse<RoleMatrixResponse>(res);
   },
 
   createRole: async (data: RoleCreate): Promise<RoleResponse> => {

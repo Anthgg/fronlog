@@ -1,15 +1,24 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { rolesApi, type RoleResponse, type ApiErrorResponse } from '../api/roles';
+import {
+  rolesApi,
+  type RoleResponse,
+  type RoleMatrixResponse,
+  type ApiErrorResponse,
+} from '../api/roles';
 import { structureApi, type OrganizationHierarchyItem } from '../api/structure';
 
 export const RolesPage: React.FC = () => {
   const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [matrixData, setMatrixData] = useState<RoleMatrixResponse | null>(null);
   const [organizations, setOrganizations] = useState<OrganizationHierarchyItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
-  // Filter
+  // Main Section Tab
+  const [activeSection, setActiveSection] = useState<'CATALOG' | 'RESPONSIBILITIES' | 'SOD'>('CATALOG');
+
+  // Filter in Catalog
   const [filterType, setFilterType] = useState<'ALL' | 'SYSTEM' | 'CUSTOM'>('ALL');
 
   // Create Modal
@@ -31,16 +40,18 @@ export const RolesPage: React.FC = () => {
       setLoading(true);
       setErrorMessage(null);
       setErrorCode(null);
-      const [rolesData, structData] = await Promise.all([
+      const [rolesData, structData, matrix] = await Promise.all([
         rolesApi.listRoles(),
         structureApi.getStructure(),
+        rolesApi.getMatrix(),
       ]);
       setRoles(rolesData);
       setOrganizations(structData.organizations);
+      setMatrixData(matrix);
     } catch (err: unknown) {
       const apiErr = err as ApiErrorResponse;
       setErrorCode(apiErr.code || 'FETCH_ERROR');
-      setErrorMessage(apiErr.message || 'Error al cargar catálogo de roles.');
+      setErrorMessage(apiErr.message || 'Error al cargar catálogo de roles y matrices.');
     } finally {
       setLoading(false);
     }
@@ -125,10 +136,10 @@ export const RolesPage: React.FC = () => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
           <h1 style={{ margin: '0 0 6px 0', fontSize: '24px', color: '#1e293b' }}>
-            Catálogo de Roles y RBAC
+            Catálogo de Roles & Matriz RBAC
           </h1>
           <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
-            Roles estándar del sistema y roles personalizados por organización
+            10 Perfiles Canónicos Logísticos, Matriz de Responsabilidades y Segregación de Funciones (SoD)
           </p>
         </div>
         <div style={{ display: 'flex', gap: '8px' }}>
@@ -189,155 +200,307 @@ export const RolesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Filter Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+      {/* Top Section Navigation */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
         <button
-          onClick={() => setFilterType('ALL')}
+          onClick={() => setActiveSection('CATALOG')}
           style={{
-            padding: '6px 14px',
-            fontSize: '13px',
-            borderRadius: '20px',
-            border: '1px solid #cbd5e1',
-            backgroundColor: filterType === 'ALL' ? '#1e293b' : '#ffffff',
-            color: filterType === 'ALL' ? '#ffffff' : '#475569',
+            padding: '8px 16px',
+            fontSize: '14px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeSection === 'CATALOG' ? '#2563eb' : '#f1f5f9',
+            color: activeSection === 'CATALOG' ? '#ffffff' : '#334155',
             cursor: 'pointer',
-            fontWeight: 500,
+            fontWeight: 600,
           }}
         >
-          Todos ({roles.length})
+          📋 Catálogo de Roles ({roles.length})
         </button>
         <button
-          onClick={() => setFilterType('SYSTEM')}
+          onClick={() => setActiveSection('RESPONSIBILITIES')}
           style={{
-            padding: '6px 14px',
-            fontSize: '13px',
-            borderRadius: '20px',
-            border: '1px solid #cbd5e1',
-            backgroundColor: filterType === 'SYSTEM' ? '#1e293b' : '#ffffff',
-            color: filterType === 'SYSTEM' ? '#ffffff' : '#475569',
+            padding: '8px 16px',
+            fontSize: '14px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeSection === 'RESPONSIBILITIES' ? '#2563eb' : '#f1f5f9',
+            color: activeSection === 'RESPONSIBILITIES' ? '#ffffff' : '#334155',
             cursor: 'pointer',
-            fontWeight: 500,
+            fontWeight: 600,
           }}
         >
-          Roles del Sistema ({roles.filter((r) => r.is_system).length})
+          🛡️ Matriz de Responsabilidades ({matrixData?.canonical_profiles.length || 10})
         </button>
         <button
-          onClick={() => setFilterType('CUSTOM')}
+          onClick={() => setActiveSection('SOD')}
           style={{
-            padding: '6px 14px',
-            fontSize: '13px',
-            borderRadius: '20px',
-            border: '1px solid #cbd5e1',
-            backgroundColor: filterType === 'CUSTOM' ? '#1e293b' : '#ffffff',
-            color: filterType === 'CUSTOM' ? '#ffffff' : '#475569',
+            padding: '8px 16px',
+            fontSize: '14px',
+            borderRadius: '6px',
+            border: 'none',
+            backgroundColor: activeSection === 'SOD' ? '#2563eb' : '#f1f5f9',
+            color: activeSection === 'SOD' ? '#ffffff' : '#334155',
             cursor: 'pointer',
-            fontWeight: 500,
+            fontWeight: 600,
           }}
         >
-          Personalizados ({roles.filter((r) => !r.is_system).length})
+          ⚖️ Segregación de Funciones (SoD) ({matrixData?.sod_conflicts.length || 0})
         </button>
       </div>
 
-      {/* Roles Grid */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando catálogo de roles...</div>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando información de roles y matrices...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
-          {filteredRoles.map((role) => {
-            const orgName = organizations.find((o) => o.id === role.organization_id)?.name;
-            return (
-              <div
-                key={role.id}
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-                }}
-              >
-                <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-                    <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>{role.name}</h3>
-                    <div style={{ display: 'flex', gap: '4px' }}>
-                      {role.is_system ? (
-                        <span style={{ fontSize: '10px', backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                          SISTEMA
-                        </span>
-                      ) : (
-                        <span style={{ fontSize: '10px', backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                          PERSONALIZADO
-                        </span>
-                      )}
-                      {role.is_test_data && (
-                        <span style={{ fontSize: '10px', backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '12px', fontWeight: 600 }}>
-                          Demo
-                        </span>
-                      )}
-                    </div>
-                  </div>
+        <>
+          {/* SECTION 1: CATALOG */}
+          {activeSection === 'CATALOG' && (
+            <div>
+              {/* Filter Tabs */}
+              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                <button
+                  onClick={() => setFilterType('ALL')}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '13px',
+                    borderRadius: '20px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: filterType === 'ALL' ? '#1e293b' : '#ffffff',
+                    color: filterType === 'ALL' ? '#ffffff' : '#475569',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Todos ({roles.length})
+                </button>
+                <button
+                  onClick={() => setFilterType('SYSTEM')}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '13px',
+                    borderRadius: '20px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: filterType === 'SYSTEM' ? '#1e293b' : '#ffffff',
+                    color: filterType === 'SYSTEM' ? '#ffffff' : '#475569',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Perfiles del Sistema ({roles.filter((r) => r.is_system).length})
+                </button>
+                <button
+                  onClick={() => setFilterType('CUSTOM')}
+                  style={{
+                    padding: '6px 14px',
+                    fontSize: '13px',
+                    borderRadius: '20px',
+                    border: '1px solid #cbd5e1',
+                    backgroundColor: filterType === 'CUSTOM' ? '#1e293b' : '#ffffff',
+                    color: filterType === 'CUSTOM' ? '#ffffff' : '#475569',
+                    cursor: 'pointer',
+                    fontWeight: 500,
+                  }}
+                >
+                  Personalizados ({roles.filter((r) => !r.is_system).length})
+                </button>
+              </div>
 
-                  <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#64748b', marginBottom: '8px' }}>
-                    Código: <strong style={{ color: '#0284c7' }}>{role.code}</strong>
-                  </div>
-
-                  <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#475569', minHeight: '36px' }}>
-                    {role.description || 'Sin descripción detallada.'}
-                  </p>
-
-                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
-                    Ámbito: {role.organization_id ? `🏢 ${orgName || 'Organización específica'}` : '🌐 Global'}
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
-                  <span style={{ fontSize: '11px', color: role.is_active ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
-                    {role.is_active ? '● Activo' : '○ Inactivo'}
-                  </span>
-                  <div style={{ display: 'flex', gap: '6px' }}>
-                    <button
-                      onClick={() => {
-                        setEditingRole(role);
-                        setEditName(role.name);
-                        setEditDesc(role.description || '');
-                        setEditIsActive(role.is_active);
-                      }}
+              {/* Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
+                {filteredRoles.map((role) => {
+                  const orgName = organizations.find((o) => o.id === role.organization_id)?.name;
+                  return (
+                    <div
+                      key={role.id}
                       style={{
-                        padding: '4px 10px',
-                        fontSize: '12px',
-                        backgroundColor: '#f8fafc',
-                        border: '1px solid #cbd5e1',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid #e2e8f0',
+                        borderRadius: '8px',
+                        padding: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
                       }}
                     >
-                      Editar
-                    </button>
-                    {!role.is_system && (
-                      <button
-                        onClick={() => handleDeleteRole(role)}
-                        style={{
-                          padding: '4px 8px',
-                          fontSize: '12px',
-                          backgroundColor: '#fee2e2',
-                          color: '#b91c1c',
-                          border: '1px solid #fecaca',
-                          borderRadius: '4px',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        Eliminar
-                      </button>
-                    )}
-                  </div>
-                </div>
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                          <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>{role.name}</h3>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {role.is_system ? (
+                              <span style={{ fontSize: '10px', backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                                SISTEMA
+                              </span>
+                            ) : (
+                              <span style={{ fontSize: '10px', backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                                PERSONALIZADO
+                              </span>
+                            )}
+                            {role.is_test_data && (
+                              <span style={{ fontSize: '10px', backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '12px', fontWeight: 600 }}>
+                                Demo
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#64748b', marginBottom: '8px' }}>
+                          Código: <strong style={{ color: '#0284c7' }}>{role.code}</strong>
+                        </div>
+
+                        <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#475569', minHeight: '36px' }}>
+                          {role.description || 'Sin descripción detallada.'}
+                        </p>
+
+                        <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                          Ámbito: {role.organization_id ? `🏢 ${orgName || 'Organización específica'}` : '🌐 Global'}
+                        </div>
+                      </div>
+
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+                        <span style={{ fontSize: '11px', color: role.is_active ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                          {role.is_active ? '● Activo' : '○ Inactivo'}
+                        </span>
+                        <div style={{ display: 'flex', gap: '6px' }}>
+                          <button
+                            onClick={() => {
+                              setEditingRole(role);
+                              setEditName(role.name);
+                              setEditDesc(role.description || '');
+                              setEditIsActive(role.is_active);
+                            }}
+                            style={{
+                              padding: '4px 10px',
+                              fontSize: '12px',
+                              backgroundColor: '#f8fafc',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            Editar
+                          </button>
+                          {!role.is_system && (
+                            <button
+                              onClick={() => handleDeleteRole(role)}
+                              style={{
+                                padding: '4px 8px',
+                                fontSize: '12px',
+                                backgroundColor: '#fee2e2',
+                                color: '#b91c1c',
+                                border: '1px solid #fecaca',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              Eliminar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
+
+          {/* SECTION 2: RESPONSIBILITIES MATRIX */}
+          {activeSection === 'RESPONSIBILITIES' && (
+            <div>
+              <div style={{ marginBottom: '16px', padding: '12px 16px', backgroundColor: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '8px', color: '#166534', fontSize: '13px' }}>
+                ✓ <strong>10 Perfiles Canónicos Logísticos Validados:</strong> Define el alcance funcional de cada rol sin asignación de permisos individuales (F006 implementará permisos granulares).
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
+                {matrixData?.canonical_profiles.map((p) => (
+                  <div
+                    key={p.role_code}
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '8px',
+                      padding: '16px',
+                      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                    }}
+                  >
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                      <span style={{ fontSize: '12px', fontFamily: 'monospace', fontWeight: 'bold', color: '#0284c7', backgroundColor: '#e0f2fe', padding: '2px 8px', borderRadius: '4px' }}>
+                        {p.role_code}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+                        {p.operational_scope}
+                      </span>
+                    </div>
+
+                    <h4 style={{ margin: '0 0 10px 0', fontSize: '15px', color: '#0f172a' }}>{p.role_name}</h4>
+
+                    <div style={{ fontSize: '12px', color: '#334155', fontWeight: 600, marginBottom: '6px' }}>
+                      Responsabilidades Funcionales:
+                    </div>
+                    <ul style={{ margin: 0, paddingLeft: '18px', fontSize: '12px', color: '#475569', lineHeight: '1.6' }}>
+                      {p.responsibilities.map((resp, idx) => (
+                        <li key={idx}>{resp}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* SECTION 3: SOD MATRIX */}
+          {activeSection === 'SOD' && (
+            <div>
+              <div style={{ marginBottom: '16px', padding: '12px 16px', backgroundColor: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px', color: '#92400e', fontSize: '13px' }}>
+                ⚖️ <strong>Matriz de Segregación de Funciones (SoD):</strong> Identifica incompatibilidades de control interno para prevenir fraude, manipulación de inventarios o conflictos de interés operativos.
+              </div>
+
+              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
+                  <thead>
+                    <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left', color: '#475569' }}>
+                      <th style={{ padding: '12px 16px' }}>Rol A</th>
+                      <th style={{ padding: '12px 16px' }}>Rol B</th>
+                      <th style={{ padding: '12px 16px' }}>Nivel de Conflicto</th>
+                      <th style={{ padding: '12px 16px' }}>Motivo de Incompatibilidad</th>
+                      <th style={{ padding: '12px 16px' }}>Política de Segregación</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {matrixData?.sod_conflicts.map((conflict, idx) => (
+                      <tr key={idx} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, fontFamily: 'monospace', color: '#0f172a' }}>
+                          {conflict.role_a}
+                        </td>
+                        <td style={{ padding: '12px 16px', fontWeight: 600, fontFamily: 'monospace', color: '#0f172a' }}>
+                          {conflict.role_b}
+                        </td>
+                        <td style={{ padding: '12px 16px' }}>
+                          {conflict.conflict_level === 'HIGH_RISK' ? (
+                            <span style={{ fontSize: '11px', backgroundColor: '#fee2e2', color: '#991b1b', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                              ALTO RIESGO
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '11px', backgroundColor: '#fef3c7', color: '#92400e', padding: '3px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                              REVISIÓN REQUERIDA
+                            </span>
+                          )}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#334155' }}>
+                          {conflict.reason}
+                        </td>
+                        <td style={{ padding: '12px 16px', color: '#475569', fontStyle: 'italic' }}>
+                          {conflict.policy}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal - Create Role */}
