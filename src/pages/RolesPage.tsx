@@ -1,0 +1,480 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { rolesApi, type RoleResponse, type ApiErrorResponse } from '../api/roles';
+import { structureApi, type OrganizationHierarchyItem } from '../api/structure';
+
+export const RolesPage: React.FC = () => {
+  const [roles, setRoles] = useState<RoleResponse[]>([]);
+  const [organizations, setOrganizations] = useState<OrganizationHierarchyItem[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
+
+  // Filter
+  const [filterType, setFilterType] = useState<'ALL' | 'SYSTEM' | 'CUSTOM'>('ALL');
+
+  // Create Modal
+  const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
+  const [newCode, setNewCode] = useState<string>('');
+  const [newName, setNewName] = useState<string>('');
+  const [newDesc, setNewDesc] = useState<string>('');
+  const [newOrgId, setNewOrgId] = useState<string>('');
+  const [newIsTest, setNewIsTest] = useState<boolean>(false);
+
+  // Edit Modal
+  const [editingRole, setEditingRole] = useState<RoleResponse | null>(null);
+  const [editName, setEditName] = useState<string>('');
+  const [editDesc, setEditDesc] = useState<string>('');
+  const [editIsActive, setEditIsActive] = useState<boolean>(true);
+
+  const fetchRolesData = useCallback(async () => {
+    try {
+      setLoading(true);
+      setErrorMessage(null);
+      setErrorCode(null);
+      const [rolesData, structData] = await Promise.all([
+        rolesApi.listRoles(),
+        structureApi.getStructure(),
+      ]);
+      setRoles(rolesData);
+      setOrganizations(structData.organizations);
+    } catch (err: unknown) {
+      const apiErr = err as ApiErrorResponse;
+      setErrorCode(apiErr.code || 'FETCH_ERROR');
+      setErrorMessage(apiErr.message || 'Error al cargar catálogo de roles.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchRolesData();
+  }, [fetchRolesData]);
+
+  const handleCreateRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setErrorMessage(null);
+      await rolesApi.createRole({
+        code: newCode.trim(),
+        name: newName.trim(),
+        description: newDesc.trim() || undefined,
+        organization_id: newOrgId ? newOrgId : null,
+        is_system: false,
+        is_test_data: newIsTest,
+      });
+      setShowCreateModal(false);
+      setNewCode('');
+      setNewName('');
+      setNewDesc('');
+      setNewOrgId('');
+      setNewIsTest(false);
+      await fetchRolesData();
+    } catch (err: unknown) {
+      const apiErr = err as ApiErrorResponse;
+      setErrorCode(apiErr.code);
+      setErrorMessage(apiErr.message);
+    }
+  };
+
+  const handleUpdateRole = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingRole) return;
+    try {
+      setErrorMessage(null);
+      await rolesApi.updateRole(editingRole.id, {
+        name: editName.trim(),
+        description: editDesc.trim() || undefined,
+        is_active: editIsActive,
+      });
+      setEditingRole(null);
+      await fetchRolesData();
+    } catch (err: unknown) {
+      const apiErr = err as ApiErrorResponse;
+      setErrorCode(apiErr.code);
+      setErrorMessage(apiErr.message);
+    }
+  };
+
+  const handleDeleteRole = async (role: RoleResponse) => {
+    if (role.is_system) {
+      alert('Los roles base del sistema están protegidos y no pueden ser eliminados.');
+      return;
+    }
+    if (!window.confirm(`¿Seguro que deseas eliminar el rol ${role.name}?`)) return;
+
+    try {
+      setErrorMessage(null);
+      await rolesApi.deleteRole(role.id);
+      await fetchRolesData();
+    } catch (err: unknown) {
+      const apiErr = err as ApiErrorResponse;
+      setErrorCode(apiErr.code);
+      setErrorMessage(apiErr.message);
+    }
+  };
+
+  const filteredRoles = roles.filter((role) => {
+    if (filterType === 'SYSTEM') return role.is_system;
+    if (filterType === 'CUSTOM') return !role.is_system;
+    return true;
+  });
+
+  return (
+    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+        <div>
+          <h1 style={{ margin: '0 0 6px 0', fontSize: '24px', color: '#1e293b' }}>
+            Catálogo de Roles y RBAC
+          </h1>
+          <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
+            Roles estándar del sistema y roles personalizados por organización
+          </p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            onClick={fetchRolesData}
+            style={{
+              padding: '8px 14px',
+              backgroundColor: '#f1f5f9',
+              border: '1px solid #cbd5e1',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 500,
+            }}
+          >
+            ↻ Actualizar
+          </button>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            style={{
+              padding: '8px 16px',
+              backgroundColor: '#2563eb',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              fontWeight: 600,
+            }}
+          >
+            + Nuevo Rol
+          </button>
+        </div>
+      </div>
+
+      {/* Error Banner */}
+      {errorMessage && (
+        <div
+          style={{
+            padding: '12px 16px',
+            backgroundColor: '#fef2f2',
+            border: '1px solid #f87171',
+            borderRadius: '8px',
+            marginBottom: '20px',
+            color: '#991b1b',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+        >
+          <div>
+            <strong>Error [{errorCode}]:</strong> {errorMessage}
+          </div>
+          <button
+            onClick={() => setErrorMessage(null)}
+            style={{ background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', fontWeight: 'bold' }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* Filter Tabs */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+        <button
+          onClick={() => setFilterType('ALL')}
+          style={{
+            padding: '6px 14px',
+            fontSize: '13px',
+            borderRadius: '20px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: filterType === 'ALL' ? '#1e293b' : '#ffffff',
+            color: filterType === 'ALL' ? '#ffffff' : '#475569',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Todos ({roles.length})
+        </button>
+        <button
+          onClick={() => setFilterType('SYSTEM')}
+          style={{
+            padding: '6px 14px',
+            fontSize: '13px',
+            borderRadius: '20px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: filterType === 'SYSTEM' ? '#1e293b' : '#ffffff',
+            color: filterType === 'SYSTEM' ? '#ffffff' : '#475569',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Roles del Sistema ({roles.filter((r) => r.is_system).length})
+        </button>
+        <button
+          onClick={() => setFilterType('CUSTOM')}
+          style={{
+            padding: '6px 14px',
+            fontSize: '13px',
+            borderRadius: '20px',
+            border: '1px solid #cbd5e1',
+            backgroundColor: filterType === 'CUSTOM' ? '#1e293b' : '#ffffff',
+            color: filterType === 'CUSTOM' ? '#ffffff' : '#475569',
+            cursor: 'pointer',
+            fontWeight: 500,
+          }}
+        >
+          Personalizados ({roles.filter((r) => !r.is_system).length})
+        </button>
+      </div>
+
+      {/* Roles Grid */}
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando catálogo de roles...</div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
+          {filteredRoles.map((role) => {
+            const orgName = organizations.find((o) => o.id === role.organization_id)?.name;
+            return (
+              <div
+                key={role.id}
+                style={{
+                  backgroundColor: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  padding: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '16px', color: '#0f172a' }}>{role.name}</h3>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {role.is_system ? (
+                        <span style={{ fontSize: '10px', backgroundColor: '#e0e7ff', color: '#3730a3', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                          SISTEMA
+                        </span>
+                      ) : (
+                        <span style={{ fontSize: '10px', backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+                          PERSONALIZADO
+                        </span>
+                      )}
+                      {role.is_test_data && (
+                        <span style={{ fontSize: '10px', backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '12px', fontWeight: 600 }}>
+                          Demo
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div style={{ fontSize: '12px', fontFamily: 'monospace', color: '#64748b', marginBottom: '8px' }}>
+                    Código: <strong style={{ color: '#0284c7' }}>{role.code}</strong>
+                  </div>
+
+                  <p style={{ margin: '0 0 12px 0', fontSize: '13px', color: '#475569', minHeight: '36px' }}>
+                    {role.description || 'Sin descripción detallada.'}
+                  </p>
+
+                  <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '12px' }}>
+                    Ámbito: {role.organization_id ? `🏢 ${orgName || 'Organización específica'}` : '🌐 Global'}
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '10px' }}>
+                  <span style={{ fontSize: '11px', color: role.is_active ? '#16a34a' : '#dc2626', fontWeight: 600 }}>
+                    {role.is_active ? '● Activo' : '○ Inactivo'}
+                  </span>
+                  <div style={{ display: 'flex', gap: '6px' }}>
+                    <button
+                      onClick={() => {
+                        setEditingRole(role);
+                        setEditName(role.name);
+                        setEditDesc(role.description || '');
+                        setEditIsActive(role.is_active);
+                      }}
+                      style={{
+                        padding: '4px 10px',
+                        fontSize: '12px',
+                        backgroundColor: '#f8fafc',
+                        border: '1px solid #cbd5e1',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Editar
+                    </button>
+                    {!role.is_system && (
+                      <button
+                        onClick={() => handleDeleteRole(role)}
+                        style={{
+                          padding: '4px 8px',
+                          fontSize: '12px',
+                          backgroundColor: '#fee2e2',
+                          color: '#b91c1c',
+                          border: '1px solid #fecaca',
+                          borderRadius: '4px',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        Eliminar
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Modal - Create Role */}
+      {showCreateModal && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '460px', maxWidth: '90%' }}>
+            <h3 style={{ margin: '0 0 16px 0' }}>Nuevo Rol Personalizado</h3>
+            <form onSubmit={handleCreateRole}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Código *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ej. QUALITY_AUDITOR"
+                  value={newCode}
+                  onChange={(e) => setNewCode(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Nombre *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="ej. Auditor de Calidad"
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Descripción</label>
+                <textarea
+                  rows={3}
+                  placeholder="Descripción de responsabilidades y permisos..."
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Organización (Opcional)</label>
+                <select
+                  value={newOrgId}
+                  onChange={(e) => setNewOrgId(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box', backgroundColor: '#ffffff' }}
+                >
+                  <option value="">-- Rol Global (Todas las organizaciones) --</option>
+                  {organizations.map((org) => (
+                    <option key={org.id} value={org.id}>
+                      {org.name} ({org.code})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="newIsTest"
+                  checked={newIsTest}
+                  onChange={(e) => setNewIsTest(e.target.checked)}
+                />
+                <label htmlFor="newIsTest" style={{ fontSize: '13px', color: '#475569' }}>Es dato sintético / prueba (Demo)</label>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setShowCreateModal(false)}
+                  style={{ padding: '8px 16px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Guardar Rol
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal - Edit Role */}
+      {editingRole && (
+        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '460px', maxWidth: '90%' }}>
+            <h3 style={{ margin: '0 0 16px 0' }}>Editar Rol: {editingRole.code}</h3>
+            <form onSubmit={handleUpdateRole}>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Nombre *</label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '12px' }}>
+                <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Descripción</label>
+                <textarea
+                  rows={3}
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  style={{ width: '100%', padding: '8px', border: '1px solid #cbd5e1', borderRadius: '4px', boxSizing: 'border-box' }}
+                />
+              </div>
+              <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input
+                  type="checkbox"
+                  id="editIsActive"
+                  checked={editIsActive}
+                  onChange={(e) => setEditIsActive(e.target.checked)}
+                />
+                <label htmlFor="editIsActive" style={{ fontSize: '13px', color: '#475569' }}>Rol activo</label>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                <button
+                  type="button"
+                  onClick={() => setEditingRole(null)}
+                  style={{ padding: '8px 16px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  style={{ padding: '8px 16px', backgroundColor: '#2563eb', color: '#ffffff', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                >
+                  Actualizar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

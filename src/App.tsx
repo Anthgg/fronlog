@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { SystemStatusPage } from './pages/SystemStatusPage';
 import { StructurePage } from './pages/StructurePage';
+import { RolesPage } from './pages/RolesPage';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'system' | 'structure'>('structure');
+  const [activeTab, setActiveTab] = useState<'system' | 'structure' | 'roles'>('structure');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -35,7 +36,7 @@ export const App: React.FC = () => {
               border: '1px solid #334155',
             }}
           >
-            Fase 004
+            Fase 005
           </span>
         </div>
 
@@ -55,6 +56,22 @@ export const App: React.FC = () => {
             }}
           >
             🏢 Estructura & Almacenes
+          </button>
+          <button
+            onClick={() => setActiveTab('roles')}
+            style={{
+              padding: '8px 14px',
+              fontSize: '13px',
+              fontWeight: 500,
+              backgroundColor: activeTab === 'roles' ? '#2563eb' : 'transparent',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s',
+            }}
+          >
+            🛡️ Roles & RBAC
           </button>
           <button
             onClick={() => setActiveTab('system')}
@@ -77,7 +94,9 @@ export const App: React.FC = () => {
 
       {/* Main Content Area */}
       <main style={{ padding: '8px 0' }}>
-        {activeTab === 'structure' ? <StructurePage /> : <SystemStatusPage />}
+        {activeTab === 'structure' && <StructurePage />}
+        {activeTab === 'roles' && <RolesPage />}
+        {activeTab === 'system' && <SystemStatusPage />}
       </main>
     </div>
   );
