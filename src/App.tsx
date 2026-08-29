@@ -8,8 +8,9 @@ import { UsersPage } from "./pages/UsersPage";
 import { SecurityPage } from "./pages/SecurityPage";
 import { SystemStatusPage } from "./pages/SystemStatusPage";
 import { DocumentCatalogPage } from "./pages/DocumentCatalogPage";
+import { DocumentNumberingPage } from "./pages/DocumentNumberingPage";
 
-type TabType = "structure" | "roles" | "audit" | "users" | "documents" | "security" | "system";
+type TabType = "structure" | "roles" | "audit" | "users" | "documents" | "numbering" | "security" | "system";
 
 const AppContent: React.FC = () => {
   const { user, roles, isAuthenticated, isLoading, mfaEnabled, logout, hasPermission } = useAuth();
@@ -98,7 +99,7 @@ const AppContent: React.FC = () => {
               fontWeight: 600,
             }}
           >
-            Fase 011
+            Fase 012
           </span>
         </div>
 
@@ -119,6 +120,24 @@ const AppContent: React.FC = () => {
               }}
             >
               📄 Catálogo Documental
+            </button>
+          )}
+
+          {hasPermission("document_catalog.read") && (
+            <button
+              onClick={() => setActiveTab("numbering")}
+              style={{
+                padding: "8px 12px",
+                fontSize: "13px",
+                fontWeight: 500,
+                backgroundColor: activeTab === "numbering" ? "#2563eb" : "transparent",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              🔢 Numeración
             </button>
           )}
 
@@ -269,6 +288,7 @@ const AppContent: React.FC = () => {
       {/* Main Content Area */}
       <main style={{ padding: "8px 24px" }}>
         {activeTab === "documents" && <DocumentCatalogPage />}
+        {activeTab === "numbering" && <DocumentNumberingPage />}
         {activeTab === "structure" && <StructurePage />}
         {activeTab === "roles" && <RolesPage />}
         {activeTab === "audit" && <AuditPage />}
