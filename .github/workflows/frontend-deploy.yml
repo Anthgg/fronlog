@@ -2,15 +2,11 @@ name: Frontend Deploy to Cloud Run
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - 'public/**'
-      - 'Dockerfile'
-      - 'nginx.conf'
-      - 'package*.json'
-      - 'vite.config.ts'
+    inputs:
+      environment:
+        description: 'Deployment Environment'
+        required: true
+        default: 'production'
 
 concurrency:
   group: frontend-deploy-production
