@@ -16,6 +16,7 @@ import {
 import { ApiError } from "../api/client";
 import { StepUpDialog, StepUpChallengeInfo } from "../components/StepUpDialog";
 import { useAuth } from "../context/AuthContext";
+import "./DocumentModules.css";
 
 export const DocumentCatalogPage: React.FC = () => {
   const { hasPermission } = useAuth();
@@ -222,52 +223,50 @@ export const DocumentCatalogPage: React.FC = () => {
   const totalExternal = useMemo(() => documentTypes.filter((d) => d.document_scope === "EXTERNAL").length, [documentTypes]);
 
   return (
-    <div className="space-y-6">
+    <section className="document-module document-catalog" aria-labelledby="document-catalog-title">
       {/* Header */}
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <header className="dm-header">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">📄</span>
-            <h1 className="text-2xl font-bold text-gray-900">Catálogo Documental Versionado</h1>
-          </div>
-          <p className="text-sm text-gray-500 mt-1">
+          <div className="dm-eyebrow">Gobierno documental · Fase 011</div>
+          <h1 id="document-catalog-title">Catálogo documental</h1>
+          <p>
             Motor Documental (Bloque II) — Especificación canónica de familias, alcances, esquemas, reglas de emisión y versiones inmutables.
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="dm-header-actions">
           <button
             onClick={loadCatalog}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+            className="dm-button dm-button--secondary"
           >
-            <span>🔄</span> Refrescar
+            {loading ? "Actualizando…" : "Refrescar catálogo"}
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Metrics Bar */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+      <div className="dm-metrics" aria-label="Resumen del catálogo">
+        <div className="dm-metric">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Tipos</div>
           <div className="text-2xl font-bold text-gray-900 mt-1">{documentTypes.length}</div>
           <div className="text-xs text-emerald-600 mt-1 font-medium">Catálogo Canónico</div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <div className="dm-metric">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Docs Internos</div>
           <div className="text-2xl font-bold text-blue-600 mt-1">{totalInternal}</div>
           <div className="text-xs text-gray-500 mt-1">Numeración propia (F012)</div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <div className="dm-metric">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Docs Externos</div>
           <div className="text-2xl font-bold text-purple-600 mt-1">{totalExternal}</div>
           <div className="text-xs text-gray-500 mt-1">Nro de origen preservado</div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <div className="dm-metric">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Familias</div>
           <div className="text-2xl font-bold text-gray-900 mt-1">{families.length}</div>
           <div className="text-xs text-gray-500 mt-1">Clasificación canónica</div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+        <div className="dm-metric">
           <div className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Retención</div>
           <div className="text-2xl font-bold text-amber-600 mt-1">{retentionPolicies.length}</div>
           <div className="text-xs text-gray-500 mt-1">Políticas de custodia</div>
@@ -276,18 +275,16 @@ export const DocumentCatalogPage: React.FC = () => {
 
       {/* Messages */}
       {error && (
-        <div className="p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl text-sm flex items-center justify-between">
+        <div className="dm-alert dm-alert--error" role="alert">
           <div className="flex items-center gap-2">
-            <span>⚠️</span>
             <span>{error}</span>
           </div>
           <button onClick={() => setError(null)} className="text-red-500 hover:text-red-700 font-bold">×</button>
         </div>
       )}
       {successMsg && (
-        <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-sm flex items-center justify-between">
+        <div className="dm-alert dm-alert--success" role="status">
           <div className="flex items-center gap-2">
-            <span>✅</span>
             <span>{successMsg}</span>
           </div>
           <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700 font-bold">×</button>
@@ -295,16 +292,12 @@ export const DocumentCatalogPage: React.FC = () => {
       )}
 
       {/* Filter Bar */}
-      <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm space-y-4">
+      <section className="dm-filters" aria-label="Filtros del catálogo documental">
         {/* Family Pills */}
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-thin">
+        <div className="dm-pills" role="group" aria-label="Familias documentales">
           <button
             onClick={() => setSelectedFamilyId("ALL")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-              selectedFamilyId === "ALL"
-                ? "bg-blue-600 text-white shadow-sm"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-            }`}
+            className={`dm-pill ${selectedFamilyId === "ALL" ? "is-active" : ""}`}
           >
             Todas las Familias ({documentTypes.length})
           </button>
@@ -314,11 +307,7 @@ export const DocumentCatalogPage: React.FC = () => {
               <button
                 key={f.id}
                 onClick={() => setSelectedFamilyId(f.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors ${
-                  selectedFamilyId === f.id
-                    ? "bg-blue-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
+                className={`dm-pill ${selectedFamilyId === f.id ? "is-active" : ""}`}
               >
                 {f.name} ({count})
               </button>
@@ -327,65 +316,57 @@ export const DocumentCatalogPage: React.FC = () => {
         </div>
 
         {/* Scope & Search Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-2 border-t border-gray-100">
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <span className="text-xs font-semibold text-gray-500 uppercase">Alcance:</span>
-            <div className="flex bg-gray-100 p-1 rounded-lg">
+        <div className="dm-filter-row">
+          <div className="dm-filter-group">
+            <span className="dm-filter-label">Alcance</span>
+            <div className="dm-segmented" role="group" aria-label="Alcance documental">
               <button
                 onClick={() => setSelectedScope("ALL")}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  selectedScope === "ALL" ? "bg-white text-gray-900 shadow-xs" : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={selectedScope === "ALL" ? "is-active" : ""}
               >
                 Todos ({documentTypes.length})
               </button>
               <button
                 onClick={() => setSelectedScope("INTERNAL")}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  selectedScope === "INTERNAL" ? "bg-white text-blue-700 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={selectedScope === "INTERNAL" ? "is-active" : ""}
               >
                 Internos ({totalInternal})
               </button>
               <button
                 onClick={() => setSelectedScope("EXTERNAL")}
-                className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                  selectedScope === "EXTERNAL" ? "bg-white text-purple-700 shadow-xs font-semibold" : "text-gray-600 hover:text-gray-900"
-                }`}
+                className={selectedScope === "EXTERNAL" ? "is-active" : ""}
               >
                 Externos ({totalExternal})
               </button>
             </div>
           </div>
 
-          <div className="relative w-full md:w-80">
+          <label className="dm-search">
+            <span className="dm-sr-only">Buscar documentos</span>
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por código (ej: PO, GRN) o nombre..."
-              className="w-full pl-9 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
-            <span className="absolute left-3 top-2.5 text-gray-400 text-sm">🔍</span>
-          </div>
+          </label>
         </div>
-      </div>
+      </section>
 
       {/* Catalog Table */}
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+      <section className="dm-table-card" aria-label="Tipos documentales">
         {loading ? (
-          <div className="p-12 text-center text-gray-500 space-y-2">
-            <div className="animate-spin text-2xl">⏳</div>
+          <div className="dm-state" role="status">
+            <span className="dm-spinner" aria-hidden="true" />
             <p className="text-sm">Cargando catálogo documental versionado...</p>
           </div>
         ) : filteredTypes.length === 0 ? (
-          <div className="p-12 text-center text-gray-500 space-y-2">
-            <div className="text-3xl">📭</div>
+          <div className="dm-state">
             <p className="text-base font-semibold text-gray-700">No se encontraron tipos documentales</p>
             <p className="text-xs text-gray-400">Intente modificar los filtros o el término de búsqueda.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="dm-table-scroll" tabIndex={0} aria-label="Tabla desplazable de tipos documentales">
             <table className="w-full text-left text-sm">
               <thead className="bg-gray-50 text-gray-600 text-xs uppercase font-semibold border-b border-gray-100">
                 <tr>
@@ -462,20 +443,20 @@ export const DocumentCatalogPage: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </section>
 
       {/* Detailed Modal / Drawer */}
       {selectedDocType && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl shadow-xl border border-gray-100 max-w-4xl w-full max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="dm-overlay" role="dialog" aria-modal="true" aria-labelledby="document-detail-title">
+          <div className="dm-modal dm-modal--wide">
             {/* Modal Header */}
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <div className="dm-modal-header">
               <div className="flex items-center gap-3">
                 <span className="font-mono text-base font-bold bg-blue-600 text-white px-2.5 py-1 rounded-lg">
                   {selectedDocType.code}
                 </span>
                 <div>
-                  <h2 className="text-xl font-bold text-gray-900">{selectedDocType.name}</h2>
+                  <h2 id="document-detail-title">{selectedDocType.name}</h2>
                   <p className="text-xs text-gray-500">{selectedDocType.description || "Sin descripción adicional"}</p>
                 </div>
               </div>
@@ -502,7 +483,7 @@ export const DocumentCatalogPage: React.FC = () => {
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex border-b border-gray-100 bg-white px-6">
+            <div className="dm-tabs" role="tablist" aria-label="Detalle del tipo documental">
               <button
                 onClick={() => setActiveTab("general")}
                 className={`py-3 px-4 text-xs font-semibold border-b-2 transition-colors ${
@@ -558,7 +539,7 @@ export const DocumentCatalogPage: React.FC = () => {
             </div>
 
             {/* Modal Body */}
-            <div className="p-6 overflow-y-auto flex-1 space-y-6">
+            <div className="dm-modal-body">
               {isDetailLoading ? (
                 <div className="py-12 text-center text-gray-500">Cargando especificación...</div>
               ) : (
@@ -994,6 +975,6 @@ export const DocumentCatalogPage: React.FC = () => {
           setPendingPublishPayload(null);
         }}
       />
-    </div>
+    </section>
   );
 };

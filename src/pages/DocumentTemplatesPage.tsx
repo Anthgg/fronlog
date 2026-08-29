@@ -3,20 +3,32 @@ import {
   fetchTemplates,
   fetchSamplePdfBlob,
   fetchPurchasingSamplePdfBlob,
+  fetchReceivingSamplePdfBlob,
   downloadSamplePdf,
   downloadPurchasingSamplePdf,
+  downloadReceivingSamplePdf,
   TemplateManifest,
 } from '../api/templates';
 import { getDocumentTypes, DocumentType } from '../api/documents';
 import { ApiError } from '../api/client';
 
-const TEMPLATE_DOC_CODE_MAP: Record<string, string> = {
+const PURCHASING_DOC_MAP: Record<string, string> = {
   purchase_requisition_v1: 'REQ',
   request_for_quotation_v1: 'RFQ',
   comparative_table_v1: 'CMP',
   purchase_order_v1: 'PO',
   purchase_approval_v1: 'POA',
   supplier_send_confirmation_v1: 'PSC',
+};
+
+const RECEIVING_DOC_MAP: Record<string, string> = {
+  arrival_appointment_v1: 'ARR',
+  gate_control_v1: 'CPV',
+  receiving_report_v1: 'REC',
+  goods_receipt_v1: 'GRN',
+  receiving_difference_v1: 'RDIFF',
+  receiving_diff_v1: 'RDIFF',
+  non_conformity_v1: 'NC',
 };
 
 export default function DocumentTemplatesPage() {
@@ -28,8 +40,8 @@ export default function DocumentTemplatesPage() {
 
   // Preview modal state
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>('base_document_v1');
-  const [previewStatus, setPreviewStatus] = useState<string>('DRAFT');
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>('arrival_appointment_v1');
+  const [previewStatus, setPreviewStatus] = useState<string>('SCHEDULED');
   const [previewScenario, setPreviewScenario] = useState<string>('basic');
   const [previewRows, setPreviewRows] = useState<number>(10);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
@@ -67,9 +79,16 @@ export default function DocumentTemplatesPage() {
         window.URL.revokeObjectURL(pdfBlobUrl);
       }
       let blobUrl = '';
-      const docCode = TEMPLATE_DOC_CODE_MAP[templateKey];
-      if (docCode) {
-        blobUrl = await fetchPurchasingSamplePdfBlob(docCode, {
+      const purchCode = PURCHASING_DOC_MAP[templateKey];
+      const recvCode = RECEIVING_DOC_MAP[templateKey];
+
+      if (recvCode) {
+        blobUrl = await fetchReceivingSamplePdfBlob(recvCode, {
+          scenario,
+          statusCode: status,
+        });
+      } else if (purchCode) {
+        blobUrl = await fetchPurchasingSamplePdfBlob(purchCode, {
           scenario,
           statusCode: status,
         });
@@ -93,7 +112,15 @@ export default function DocumentTemplatesPage() {
 
   const handleOpenPreview = (templateKey: string) => {
     setSelectedTemplateKey(templateKey);
-    const defaultStatus = templateKey === 'purchase_approval_v1' ? 'APPROVED' : (templateKey === 'supplier_send_confirmation_v1' ? 'PROCESSED' : 'DRAFT');
+    let defaultStatus = 'DRAFT';
+    if (templateKey === 'arrival_appointment_v1') defaultStatus = 'SCHEDULED';
+    else if (templateKey === 'gate_control_v1') defaultStatus = 'INSIDE';
+    else if (templateKey === 'receiving_report_v1') defaultStatus = 'COMPLETED';
+    else if (templateKey === 'goods_receipt_v1' || templateKey === 'non_conformity_v1') defaultStatus = 'ISSUED';
+    else if (templateKey === 'receiving_difference_v1' || templateKey === 'receiving_diff_v1') defaultStatus = 'OPEN';
+    else if (templateKey === 'purchase_approval_v1') defaultStatus = 'APPROVED';
+    else if (templateKey === 'supplier_send_confirmation_v1') defaultStatus = 'PROCESSED';
+
     setPreviewStatus(defaultStatus);
     setPreviewScenario('basic');
     setPreviewRows(10);
@@ -111,12 +138,20 @@ export default function DocumentTemplatesPage() {
 
   const handleDownload = async () => {
     try {
-      const docCode = TEMPLATE_DOC_CODE_MAP[selectedTemplateKey];
-      if (docCode) {
-        await downloadPurchasingSamplePdf(docCode, {
+      const purchCode = PURCHASING_DOC_MAP[selectedTemplateKey];
+      const recvCode = RECEIVING_DOC_MAP[selectedTemplateKey];
+
+      if (recvCode) {
+        await downloadReceivingSamplePdf(recvCode, {
           scenario: previewScenario,
           statusCode: previewStatus,
-          filename: `muestra_${docCode.toLowerCase()}_${previewScenario}_${previewStatus.toLowerCase()}.pdf`,
+          filename: `muestra_${recvCode.toLowerCase()}_${previewScenario}_${previewStatus.toLowerCase()}.pdf`,
+        });
+      } else if (purchCode) {
+        await downloadPurchasingSamplePdf(purchCode, {
+          scenario: previewScenario,
+          statusCode: previewStatus,
+          filename: `muestra_${purchCode.toLowerCase()}_${previewScenario}_${previewStatus.toLowerCase()}.pdf`,
         });
       } else {
         await downloadSamplePdf({
@@ -139,7 +174,8 @@ export default function DocumentTemplatesPage() {
     return tpl.family.toUpperCase() === selectedFamilyFilter;
   });
 
-  const isPurchasingTemplate = Boolean(TEMPLATE_DOC_CODE_MAP[selectedTemplateKey]);
+  const isReceiving = Boolean(RECEIVING_DOC_MAP[selectedTemplateKey]);
+  const isPurchasing = Boolean(PURCHASING_DOC_MAP[selectedTemplateKey]);
 
   return (
     <div style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
@@ -150,28 +186,28 @@ export default function DocumentTemplatesPage() {
             <h1 style={{ margin: 0, fontSize: '24px', color: '#0f172a' }}>Plantillas Documentales y Renderizado PDF</h1>
             <span
               style={{
-                backgroundColor: '#dcfce7',
-                color: '#166534',
+                backgroundColor: '#dbeafe',
+                color: '#1e40af',
                 fontSize: '12px',
                 fontWeight: 700,
                 padding: '4px 10px',
                 borderRadius: '9999px',
-                border: '1px solid #bbf7d0',
+                border: '1px solid #bfdbfe',
               }}
             >
-              Fase 015 (Compras)
+              Fase 016 (Recepción e Ingreso)
             </span>
           </div>
           <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>
-            Motor central de plantillas HTML/CSS compiladas en backend a PDF A4 (Portrait y Landscape) mediante WeasyPrint,
-            con snapshots inmutables SHA-256, códigos QR técnicos y paquete documental completo de compras (REQ, RFQ, CMP, PO, POA, PSC).
+            Motor central de plantillas HTML/CSS compiladas en backend a PDF A4 mediante WeasyPrint 69.0,
+            con snapshots inmutables SHA-256, códigos QR técnicos y paquetes documentales de Compras (F015) y Recepción (F016).
           </p>
         </div>
 
         <button
-          onClick={() => handleOpenPreview('purchase_order_v1')}
+          onClick={() => handleOpenPreview('receiving_report_v1')}
           style={{
-            backgroundColor: '#2563eb',
+            backgroundColor: '#0284c7',
             color: '#fff',
             border: 'none',
             padding: '10px 18px',
@@ -179,25 +215,25 @@ export default function DocumentTemplatesPage() {
             fontSize: '14px',
             fontWeight: 600,
             cursor: 'pointer',
-            boxShadow: '0 2px 4px rgba(37, 99, 235, 0.2)',
+            boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)',
           }}
         >
-          📄 Vista Previa Orden de Compra
+          📋 Vista Previa Acta de Recepción
         </button>
       </div>
 
       {/* Metric Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Compras (F015)</div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', marginTop: '6px' }}>6 Plantillas Oficiales</div>
-          <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>✓ REQ, RFQ, CMP, PO, POA, PSC</div>
+          <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Recepción (F016)</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#0284c7', marginTop: '6px' }}>6 Plantillas de Ingreso</div>
+          <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>✓ ARR, CPV, REC, GRN, RDIFF, NC</div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
-          <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Orientación & Layouts</div>
-          <div style={{ fontSize: '22px', fontWeight: 700, color: '#2563eb', marginTop: '6px' }}>Portrait & Landscape</div>
-          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Cuadro Comparativo (CMP) en A4 Horizontal</div>
+          <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Compras (F015)</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', marginTop: '6px' }}>6 Plantillas Oficiales</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>✓ REQ, RFQ, CMP, PO, POA, PSC</div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -211,7 +247,8 @@ export default function DocumentTemplatesPage() {
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         {[
           { id: 'ALL', label: 'Todas las Plantillas' },
-          { id: 'PURCHASING', label: 'Compras y Aprovisionamiento (F015)' },
+          { id: 'RECEIVING', label: 'Recepción e Ingresos (F016)' },
+          { id: 'PURCHASING', label: 'Compras y Adquisiciones (F015)' },
           { id: 'BASE', label: 'Plantillas Base Universales' },
         ].map((tab) => (
           <button
@@ -220,9 +257,9 @@ export default function DocumentTemplatesPage() {
             style={{
               padding: '8px 16px',
               borderRadius: '6px',
-              border: selectedFamilyFilter === tab.id ? '1px solid #2563eb' : '1px solid #cbd5e1',
-              backgroundColor: selectedFamilyFilter === tab.id ? '#eff6ff' : '#ffffff',
-              color: selectedFamilyFilter === tab.id ? '#1d4ed8' : '#475569',
+              border: selectedFamilyFilter === tab.id ? '1px solid #0284c7' : '1px solid #cbd5e1',
+              backgroundColor: selectedFamilyFilter === tab.id ? '#f0f9ff' : '#ffffff',
+              color: selectedFamilyFilter === tab.id ? '#0369a1' : '#475569',
               fontWeight: selectedFamilyFilter === tab.id ? 700 : 500,
               fontSize: '13px',
               cursor: 'pointer',
@@ -251,7 +288,7 @@ export default function DocumentTemplatesPage() {
                     <th style={{ padding: '12px 16px' }}>Clave Plantilla</th>
                     <th style={{ padding: '12px 16px' }}>Familia</th>
                     <th style={{ padding: '12px 16px' }}>Versión</th>
-                    <th style={{ padding: '12px 16px' }}>Formato & Orientación</th>
+                    <th style={{ padding: '12px 16px' }}>Formato</th>
                     <th style={{ padding: '12px 16px' }}>Motor</th>
                     <th style={{ padding: '12px 16px' }}>Estados</th>
                     <th style={{ padding: '12px 16px', textAlign: 'right' }}>Acción</th>
@@ -267,7 +304,18 @@ export default function DocumentTemplatesPage() {
                         </div>
                       </td>
                       <td style={{ padding: '12px 16px' }}>
-                        <span style={{ backgroundColor: tpl.family === 'purchasing' ? '#dbeafe' : '#f1f5f9', color: tpl.family === 'purchasing' ? '#1e40af' : '#475569', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: 600 }}>
+                        <span
+                          style={{
+                            backgroundColor:
+                              tpl.family === 'receiving' ? '#e0f2fe' : (tpl.family === 'purchasing' ? '#dbeafe' : '#f1f5f9'),
+                            color:
+                              tpl.family === 'receiving' ? '#0369a1' : (tpl.family === 'purchasing' ? '#1e40af' : '#475569'),
+                            padding: '2px 8px',
+                            borderRadius: '4px',
+                            fontSize: '12px',
+                            fontWeight: 600,
+                          }}
+                        >
                           {tpl.family.toUpperCase()}
                         </span>
                       </td>
@@ -330,7 +378,12 @@ export default function DocumentTemplatesPage() {
                 </thead>
                 <tbody>
                   {docTypes
-                    .filter((dt) => selectedFamilyFilter === 'ALL' || (selectedFamilyFilter === 'PURCHASING' && ['REQ', 'RFQ', 'CMP', 'PO', 'POA', 'PSC'].includes(dt.code)))
+                    .filter((dt) => {
+                      if (selectedFamilyFilter === 'ALL') return true;
+                      if (selectedFamilyFilter === 'RECEIVING') return ['ARR', 'CPV', 'REC', 'GRN', 'RDIFF', 'NC'].includes(dt.code);
+                      if (selectedFamilyFilter === 'PURCHASING') return ['REQ', 'RFQ', 'CMP', 'PO', 'POA', 'PSC'].includes(dt.code);
+                      return true;
+                    })
                     .map((dt) => {
                       const versionNum = dt.current_version_number ?? 1;
                       const hasTemplate = Boolean(dt.current_template_key);
@@ -474,14 +527,28 @@ export default function DocumentTemplatesPage() {
                   }}
                   style={{ padding: '5px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                 >
-                  <option value="DRAFT">DRAFT (Borrador con marca de agua)</option>
-                  <option value="APPROVED">APPROVED (Aprobado)</option>
-                  <option value="ISSUED">ISSUED (Emitido)</option>
-                  <option value="VOID">VOID (Anulado con marca de agua)</option>
+                  {isReceiving ? (
+                    <>
+                      <option value="SCHEDULED">SCHEDULED (Programado)</option>
+                      <option value="INSIDE">INSIDE (En Patio / Garita)</option>
+                      <option value="COMPLETED">COMPLETED (Inspeccionado)</option>
+                      <option value="ISSUED">ISSUED (Emitido)</option>
+                      <option value="OPEN">OPEN (Discrepancias Abiertas)</option>
+                      <option value="DRAFT">DRAFT (Borrador)</option>
+                      <option value="VOID">VOID (Anulado)</option>
+                    </>
+                  ) : (
+                    <>
+                      <option value="DRAFT">DRAFT (Borrador con marca de agua)</option>
+                      <option value="APPROVED">APPROVED (Aprobado)</option>
+                      <option value="ISSUED">ISSUED (Emitido)</option>
+                      <option value="VOID">VOID (Anulado con marca de agua)</option>
+                    </>
+                  )}
                 </select>
               </div>
 
-              {isPurchasingTemplate ? (
+              {isReceiving || isPurchasing ? (
                 <div>
                   <label style={{ fontWeight: 600, color: '#334155', marginRight: '6px' }}>Escenario de Prueba:</label>
                   <select
@@ -493,9 +560,11 @@ export default function DocumentTemplatesPage() {
                     }}
                     style={{ padding: '5px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                   >
-                    <option value="basic">Escenario Básico (6 ítems)</option>
+                    <option value="basic">Escenario Básico (Estándar)</option>
                     <option value="multipage">Multipágina (50 ítems)</option>
                     <option value="long_text">Texto Largo / Justificación Extensa</option>
+                    {isReceiving && <option value="observed">Observado / Diferencias de Descarga</option>}
+                    {isReceiving && <option value="partial">Recepción Parcial de Carga</option>}
                   </select>
                 </div>
               ) : (

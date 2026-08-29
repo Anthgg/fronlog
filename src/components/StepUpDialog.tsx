@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { mfaApi } from "../api/mfa";
 import { ApiError } from "../api/client";
+import "./StepUpDialog.css";
 
 export interface StepUpChallengeInfo {
   challengeId: string;
@@ -63,224 +64,128 @@ export const StepUpDialog: React.FC<StepUpDialogProps> = ({
     }
   };
 
-  return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: "rgba(15, 23, 42, 0.75)",
-        backdropFilter: "blur(4px)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-        padding: "1rem",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#1e293b",
-          border: "1px solid #334155",
-          borderRadius: "1rem",
-          maxWidth: "440px",
-          width: "100%",
-          padding: "1.75rem",
-          boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-          color: "#f8fafc",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-          <div
-            style={{
-              width: "40px",
-              height: "40px",
-              borderRadius: "0.75rem",
-              backgroundColor: "rgba(245, 158, 11, 0.15)",
-              color: "#f59e0b",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "1.25rem",
-            }}
-          >
-            🛡️
-          </div>
-          <div>
-            <h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 600 }}>
-              Verificación Requerida (Step-Up)
-            </h3>
-            <p style={{ margin: 0, fontSize: "0.8rem", color: "#94a3b8" }}>
-              Acción sensible protegida por política de seguridad
-            </p>
-          </div>
-        </div>
+  const selectMethod = (nextMethod: "TOTP" | "RECOVERY_CODE") => {
+    setMethod(nextMethod);
+    setCode("");
+    setErrorMsg(null);
+  };
 
-        <div
-          style={{
-            backgroundColor: "#0f172a",
-            padding: "0.75rem 1rem",
-            borderRadius: "0.5rem",
-            marginBottom: "1.25rem",
-            fontSize: "0.85rem",
-            color: "#cbd5e1",
-            borderLeft: "3px solid #3b82f6",
-          }}
-        >
-          Para autorizar esta operación, ingresa el código de tu autenticador o un código de recuperación.
-        </div>
+  const fieldLabel =
+    method === "TOTP"
+      ? "Código TOTP de 6 dígitos"
+      : "Código de recuperación de 10 caracteres";
+
+  return (
+    <div className="step-up__backdrop">
+      <section
+        className="step-up"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="step-up-title"
+        aria-describedby="step-up-description"
+      >
+        <header className="step-up__header">
+          <span className="step-up__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M12 3 5.5 5.8v5.3c0 4.3 2.7 8.2 6.5 9.9 3.8-1.7 6.5-5.6 6.5-9.9V5.8L12 3Z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinejoin="round"
+              />
+              <path
+                d="m9.2 12 1.8 1.8 3.9-4"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          <div>
+            <p className="step-up__eyebrow">Seguridad de la operación</p>
+            <h2 id="step-up-title">Verificación requerida</h2>
+          </div>
+        </header>
+
+        <p className="step-up__description" id="step-up-description">
+          Para autorizar esta acción, ingresa el código de tu autenticador o un
+          código de recuperación.
+        </p>
 
         {errorMsg && (
-          <div
-            style={{
-              backgroundColor: "rgba(239, 68, 68, 0.15)",
-              border: "1px solid #ef4444",
-              color: "#fca5a5",
-              padding: "0.75rem",
-              borderRadius: "0.5rem",
-              fontSize: "0.85rem",
-              marginBottom: "1rem",
-            }}
-          >
-            {errorMsg}
+          <div className="step-up__alert" id="step-up-error" role="alert">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M12 8v4m0 4h.01M10.3 4.8 3.4 17a2 2 0 0 0 1.7 3h13.8a2 2 0 0 0 1.7-3L13.7 4.8a2 2 0 0 0-3.4 0Z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span>{errorMsg}</span>
           </div>
         )}
 
-        {/* Method Selector Tabs */}
-        <div
-          style={{
-            display: "flex",
-            backgroundColor: "#0f172a",
-            padding: "0.25rem",
-            borderRadius: "0.5rem",
-            marginBottom: "1.25rem",
-            gap: "0.25rem",
-          }}
-        >
+        <div className="step-up__method" role="tablist" aria-label="Método de verificación">
           <button
+            className={method === "TOTP" ? "is-active" : ""}
             type="button"
-            onClick={() => {
-              setMethod("TOTP");
-              setCode("");
-              setErrorMsg(null);
-            }}
-            style={{
-              flex: 1,
-              padding: "0.5rem",
-              borderRadius: "0.375rem",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "0.85rem",
-              fontWeight: 500,
-              backgroundColor: method === "TOTP" ? "#3b82f6" : "transparent",
-              color: method === "TOTP" ? "#ffffff" : "#94a3b8",
-              transition: "all 0.2s",
-            }}
+            role="tab"
+            aria-selected={method === "TOTP"}
+            onClick={() => selectMethod("TOTP")}
           >
-            App Autenticador
+            App autenticador
           </button>
           <button
+            className={method === "RECOVERY_CODE" ? "is-active" : ""}
             type="button"
-            onClick={() => {
-              setMethod("RECOVERY_CODE");
-              setCode("");
-              setErrorMsg(null);
-            }}
-            style={{
-              flex: 1,
-              padding: "0.5rem",
-              borderRadius: "0.375rem",
-              border: "none",
-              cursor: "pointer",
-              fontSize: "0.85rem",
-              fontWeight: 500,
-              backgroundColor: method === "RECOVERY_CODE" ? "#3b82f6" : "transparent",
-              color: method === "RECOVERY_CODE" ? "#ffffff" : "#94a3b8",
-              transition: "all 0.2s",
-            }}
+            role="tab"
+            aria-selected={method === "RECOVERY_CODE"}
+            onClick={() => selectMethod("RECOVERY_CODE")}
           >
-            Código Recuperación
+            Código de recuperación
           </button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: "1.5rem" }}>
-            <label
-              style={{
-                display: "block",
-                fontSize: "0.85rem",
-                color: "#94a3b8",
-                marginBottom: "0.5rem",
-                fontWeight: 500,
-              }}
-            >
-              {method === "TOTP"
-                ? "Código TOTP (6 dígitos):"
-                : "Código de Recuperación (10 caracteres):"}
-            </label>
+          <div className="step-up__field">
+            <label htmlFor="step-up-code">{fieldLabel}</label>
             <input
+              id="step-up-code"
               type="text"
+              inputMode={method === "TOTP" ? "numeric" : "text"}
+              autoComplete="one-time-code"
               autoFocus
               value={code}
               onChange={(e) => setCode(e.target.value)}
               placeholder={method === "TOTP" ? "123456" : "ABCD-EFGH"}
               maxLength={method === "TOTP" ? 8 : 20}
-              style={{
-                width: "100%",
-                padding: "0.75rem 1rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #475569",
-                backgroundColor: "#0f172a",
-                color: "#f8fafc",
-                fontSize: "1.25rem",
-                letterSpacing: "0.2em",
-                textAlign: "center",
-                fontWeight: 600,
-                outline: "none",
-                boxSizing: "border-box",
-              }}
+              aria-invalid={Boolean(errorMsg)}
+              aria-describedby={errorMsg ? "step-up-error" : undefined}
             />
           </div>
 
-          <div style={{ display: "flex", gap: "0.75rem", justifyContent: "flex-end" }}>
+          <div className="step-up__actions">
             <button
+              className="step-up__button step-up__button--secondary"
               type="button"
               disabled={loading}
               onClick={onCancel}
-              style={{
-                padding: "0.625rem 1.25rem",
-                borderRadius: "0.5rem",
-                border: "1px solid #475569",
-                backgroundColor: "transparent",
-                color: "#cbd5e1",
-                cursor: "pointer",
-                fontWeight: 500,
-                fontSize: "0.9rem",
-              }}
             >
               Cancelar
             </button>
             <button
+              className="step-up__button step-up__button--primary"
               type="submit"
               disabled={loading || !code.trim()}
-              style={{
-                padding: "0.625rem 1.5rem",
-                borderRadius: "0.5rem",
-                border: "none",
-                backgroundColor: loading ? "#2563eb80" : "#2563eb",
-                color: "#ffffff",
-                cursor: loading ? "not-allowed" : "pointer",
-                fontWeight: 600,
-                fontSize: "0.9rem",
-              }}
             >
-              {loading ? "Verificando..." : "Confirmar y Continuar"}
+              {loading ? "Verificando..." : "Confirmar y continuar"}
             </button>
           </div>
         </form>
-      </div>
+      </section>
     </div>
   );
 };

@@ -16,6 +16,7 @@ import { getDocumentTypes, DocumentType } from '../api/documents';
 import { structureApi, BranchTreeItem, OrganizationTreeItem } from '../api/structure';
 import { StepUpDialog, StepUpChallengeInfo } from '../components/StepUpDialog';
 import { ApiError } from '../api/client';
+import './DocumentModules.css';
 
 export default function DocumentSeriesPage() {
   const [seriesList, setSeriesList] = useState<DocumentSeriesResponse[]>([]);
@@ -216,13 +217,14 @@ export default function DocumentSeriesPage() {
   const totalVoided = seriesList.reduce((acc, s) => acc + s.voided_count, 0);
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
+    <section className="document-module document-series" aria-labelledby="document-series-title">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <header className="dm-header">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <h1 style={{ margin: 0, fontSize: '24px', color: '#0f172a' }}>Series Digitales y Talonarios</h1>
-            <span
+          <div className="dm-eyebrow">Control correlativo · Fase 013</div>
+          <div className="dm-title-row">
+            <h1 id="document-series-title">Series digitales y talonarios</h1>
+            <span className="dm-badge dm-badge--info"
               style={{
                 backgroundColor: '#e0e7ff',
                 color: '#4338ca',
@@ -236,7 +238,7 @@ export default function DocumentSeriesPage() {
               Fase 013
             </span>
           </div>
-          <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>
+          <p>
             Control de series por organización, sede y periodo con reserva transaccional locked por SELECT FOR UPDATE y
             talonarios CSV sin reutilización.
           </p>
@@ -247,6 +249,7 @@ export default function DocumentSeriesPage() {
             setShowCreateModal(true);
             setReservationResult(null);
           }}
+          className="dm-button dm-button--primary"
           style={{
             backgroundColor: '#2563eb',
             color: '#fff',
@@ -261,23 +264,23 @@ export default function DocumentSeriesPage() {
         >
           + Nueva Serie Digital
         </button>
-      </div>
+      </header>
 
       {/* Metrics Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div className="dm-metrics" aria-label="Resumen de series">
+        <div className="dm-metric">
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Series Activas</div>
           <div style={{ fontSize: '28px', fontWeight: 700, color: '#0f172a', marginTop: '6px' }}>{seriesList.length}</div>
           <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>Ámbito: Tipo + Sede + Periodo</div>
         </div>
 
-        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="dm-metric">
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Correlativos Reservados</div>
           <div style={{ fontSize: '28px', fontWeight: 700, color: '#2563eb', marginTop: '6px' }}>{totalReserved}</div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>Asignación monótona asegurada</div>
         </div>
 
-        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="dm-metric">
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Correlativos Anulados</div>
           <div style={{ fontSize: '28px', fontWeight: 700, color: '#dc2626', marginTop: '6px' }}>{totalVoided}</div>
           <div style={{ fontSize: '12px', color: '#dc2626', marginTop: '4px' }}>Conservados inmutables (Sin reutilizar)</div>
@@ -285,7 +288,7 @@ export default function DocumentSeriesPage() {
       </div>
 
       {/* Filters */}
-      <div style={{ display: 'flex', gap: '12px', marginBottom: '20px', flexWrap: 'wrap' }}>
+      <div className="dm-filters dm-filter-grid" aria-label="Filtros de series">
         <select
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
@@ -336,15 +339,15 @@ export default function DocumentSeriesPage() {
 
       {/* Series Table */}
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '48px', color: '#64748b' }}>Cargando series documentales...</div>
+        <div className="dm-state" role="status"><span className="dm-spinner" aria-hidden="true" />Cargando series documentales...</div>
       ) : error ? (
-        <div style={{ padding: '16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '20px' }}>{error}</div>
+        <div className="dm-alert dm-alert--error" role="alert">{error}</div>
       ) : seriesList.length === 0 ? (
-        <div style={{ textAlign: 'center', padding: '48px', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748b' }}>
+        <div className="dm-state dm-state--empty">
           No se encontraron series digitales configuradas con los filtros actuales.
         </div>
       ) : (
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="dm-table-card dm-table-scroll" tabIndex={0} aria-label="Series documentales desplazables">
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
             <thead>
               <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
@@ -404,6 +407,7 @@ export default function DocumentSeriesPage() {
                           setReservationResult(null);
                           setShowReserveModal(true);
                         }}
+                        className="dm-button dm-button--primary dm-button--small"
                         style={{
                           backgroundColor: '#2563eb',
                           color: '#fff',
@@ -419,6 +423,7 @@ export default function DocumentSeriesPage() {
                       </button>
                       <button
                         onClick={() => handleOpenNumbersDrawer(s)}
+                        className="dm-button dm-button--secondary dm-button--small"
                         style={{
                           backgroundColor: '#f1f5f9',
                           color: '#334155',
@@ -443,7 +448,10 @@ export default function DocumentSeriesPage() {
 
       {/* Modal: Crear Nueva Serie Digital */}
       {showCreateModal && (
-        <div
+        <div className="dm-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-series-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -454,8 +462,8 @@ export default function DocumentSeriesPage() {
             zIndex: 1000,
           }}
         >
-          <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', width: '480px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 16px 0', fontSize: '18px', color: '#0f172a' }}>Nueva Serie Digital</h3>
+          <div className="dm-modal dm-modal--compact" style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', width: '480px', maxWidth: '90%' }}>
+            <h3 id="create-series-title">Nueva serie digital</h3>
 
             <div style={{ marginBottom: '16px' }}>
               <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, marginBottom: '6px', color: '#334155' }}>
@@ -505,15 +513,17 @@ export default function DocumentSeriesPage() {
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div className="dm-modal-actions">
               <button
                 onClick={() => setShowCreateModal(false)}
+                className="dm-button dm-button--secondary"
                 style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer' }}
               >
                 Cancelar
               </button>
               <button
                 onClick={executeCreateSeries}
+                className="dm-button dm-button--primary"
                 style={{ padding: '8px 16px', borderRadius: '6px', backgroundColor: '#2563eb', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}
               >
                 Crear Serie
@@ -525,7 +535,10 @@ export default function DocumentSeriesPage() {
 
       {/* Modal: Reservar Rango */}
       {showReserveModal && selectedSeries && (
-        <div
+        <div className="dm-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="reserve-series-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -536,8 +549,8 @@ export default function DocumentSeriesPage() {
             zIndex: 1000,
           }}
         >
-          <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', width: '520px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#0f172a' }}>
+          <div className="dm-modal dm-modal--compact" style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', width: '520px', maxWidth: '90%' }}>
+            <h3 id="reserve-series-title">
               Reservar Rango de Correlativos
             </h3>
             <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#64748b' }}>
@@ -607,12 +620,13 @@ export default function DocumentSeriesPage() {
               </>
             )}
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div className="dm-modal-actions">
               <button
                 onClick={() => {
                   setShowReserveModal(false);
                   setReservationResult(null);
                 }}
+                className="dm-button dm-button--secondary"
                 style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer' }}
               >
                 {reservationResult ? 'Cerrar' : 'Cancelar'}
@@ -620,6 +634,7 @@ export default function DocumentSeriesPage() {
               {!reservationResult && (
                 <button
                   onClick={executeReserveCorrelatives}
+                  className="dm-button dm-button--primary"
                   style={{ padding: '8px 16px', borderRadius: '6px', backgroundColor: '#2563eb', color: '#fff', border: 'none', fontWeight: 600, cursor: 'pointer' }}
                 >
                   Confirmar Reserva
@@ -632,7 +647,10 @@ export default function DocumentSeriesPage() {
 
       {/* Drawer / Vista de Números & Talonario */}
       {showNumbersDrawer && selectedSeries && (
-        <div
+        <div className="dm-overlay dm-overlay--drawer"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="series-numbers-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -642,7 +660,7 @@ export default function DocumentSeriesPage() {
             zIndex: 1000,
           }}
         >
-          <div
+          <div className="dm-drawer"
             style={{
               backgroundColor: '#fff',
               width: '850px',
@@ -656,7 +674,7 @@ export default function DocumentSeriesPage() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ margin: 0, fontSize: '20px', color: '#0f172a' }}>
+                <h3 id="series-numbers-title">
                   Inventario de Correlativos: {selectedSeries.series_prefix}
                 </h3>
                 <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
@@ -743,7 +761,7 @@ export default function DocumentSeriesPage() {
                 No hay correlativos registrados en esta serie aún.
               </div>
             ) : (
-              <div style={{ flex: 1, overflowY: 'auto', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+              <div className="dm-table-card dm-table-scroll" tabIndex={0} aria-label="Correlativos desplazables">
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
@@ -823,7 +841,10 @@ export default function DocumentSeriesPage() {
 
       {/* Modal: Anular Número */}
       {showVoidModal && selectedNumberToVoid && (
-        <div
+        <div className="dm-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="void-number-title"
           style={{
             position: 'fixed',
             inset: 0,
@@ -834,8 +855,8 @@ export default function DocumentSeriesPage() {
             zIndex: 1100,
           }}
         >
-          <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', width: '460px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 8px 0', fontSize: '18px', color: '#991b1b' }}>
+          <div className="dm-modal dm-modal--compact" style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '8px', width: '460px', maxWidth: '90%' }}>
+            <h3 id="void-number-title" className="dm-danger-text">
               Anulación Formal de Correlativo
             </h3>
             <p style={{ margin: '0 0 16px 0', fontSize: '14px', color: '#475569' }}>
@@ -869,12 +890,13 @@ export default function DocumentSeriesPage() {
               />
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+            <div className="dm-modal-actions">
               <button
                 onClick={() => {
                   setShowVoidModal(false);
                   setSelectedNumberToVoid(null);
                 }}
+                className="dm-button dm-button--secondary"
                 style={{ padding: '8px 16px', borderRadius: '6px', border: '1px solid #cbd5e1', backgroundColor: '#fff', cursor: 'pointer' }}
               >
                 Cancelar
@@ -882,6 +904,7 @@ export default function DocumentSeriesPage() {
               <button
                 disabled={voidReason.trim().length < 3}
                 onClick={executeVoidNumber}
+                className="dm-button dm-button--danger"
                 style={{
                   padding: '8px 16px',
                   borderRadius: '6px',
@@ -917,6 +940,6 @@ export default function DocumentSeriesPage() {
           }
         }}
       />
-    </div>
+    </section>
   );
 }

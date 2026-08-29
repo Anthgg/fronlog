@@ -7,6 +7,7 @@ import {
 } from '../api/numbering';
 import { getDocumentTypes, DocumentType } from '../api/documents';
 import { structureApi, BranchTreeItem, OrganizationTreeItem } from '../api/structure';
+import './DocumentModules.css';
 
 export const DocumentNumberingPage: React.FC = () => {
   const [standard, setStandard] = useState<NumberingStandardSpec | null>(null);
@@ -96,54 +97,45 @@ export const DocumentNumberingPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12 text-slate-400">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mr-3"></div>
+      <div className="document-module dm-state" role="status">
+        <span className="dm-spinner" aria-hidden="true" />
         Cargando estándar canónico de numeración...
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <section className="document-module document-numbering" aria-labelledby="document-numbering-title">
       {/* Header Banner */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600/10 rounded-full blur-3xl pointer-events-none -mr-20 -mt-20"></div>
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 relative z-10">
+      <header className="dm-header dm-header--technical">
+        <div className="dm-header-layout">
           <div>
-            <div className="flex items-center gap-3">
-              <span className="text-3xl">🔢</span>
-              <h1 className="text-2xl font-black text-white tracking-tight">
-                Estándar Canónico de Códigos Documentales
-              </h1>
-              <span className="px-3 py-1 bg-indigo-900/60 border border-indigo-500/40 text-indigo-300 text-xs font-mono font-bold rounded-full">
-                Fase 012
-              </span>
-            </div>
-            <p className="text-sm text-slate-400 mt-2 max-w-3xl">
+            <div className="dm-eyebrow">Numeración documental · Fase 012</div>
+            <h1 id="document-numbering-title">Estándar canónico de códigos</h1>
+            <p>
               Norma técnica canónica para la identificación y codificación visible de documentos internos mediante la estructura{' '}
-              <strong className="text-indigo-400 font-mono">TIPO-SEDE-AÑO-CORRELATIVO</strong> y preservación incondicional de numeración legal externa.
+              <strong>TIPO-SEDE-AÑO-CORRELATIVO</strong> y preservación incondicional de numeración legal externa.
             </p>
           </div>
-          <div className="flex items-center gap-2 bg-slate-950/80 border border-slate-800 px-4 py-2.5 rounded-xl text-xs font-mono">
-            <span className="text-slate-400">Patrón:</span>
-            <span className="text-emerald-400 font-bold">{standard?.pattern || '{TYPE}-{BRANCH}-{YEAR}-{SEQUENCE}'}</span>
+          <div className="dm-pattern">
+            <span>Patrón</span>
+            <code>{standard?.pattern || '{TYPE}-{BRANCH}-{YEAR}-{SEQUENCE}'}</code>
           </div>
         </div>
-      </div>
+      </header>
 
       {error && (
-        <div className="p-4 bg-rose-950/40 border border-rose-800/60 rounded-xl text-rose-300 text-sm flex items-center gap-3">
-          <span>⚠️</span>
+        <div className="dm-alert dm-alert--error" role="alert">
           <span>{error}</span>
         </div>
       )}
 
       {/* Segment Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="dm-segment-grid">
         {standard?.segments.map((seg) => (
           <div
             key={seg.key}
-            className="bg-slate-900/90 border border-slate-800 rounded-xl p-5 hover:border-slate-700 transition-all flex flex-col justify-between"
+            className="dm-card dm-segment-card"
           >
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -163,24 +155,22 @@ export const DocumentNumberingPage: React.FC = () => {
       </div>
 
       {/* Main Interactive Grid: Playground & Properties */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="dm-split dm-split--numbering">
         {/* Left: Interactive Preview Form */}
-        <div className="lg:col-span-7 bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+        <section className="dm-panel dm-numbering-preview" aria-labelledby="numbering-preview-title">
+          <div className="dm-section-header">
             <div>
-              <h2 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>🧪</span> Generador de Vista Previa (Preview)
-              </h2>
+              <h2 id="numbering-preview-title">Generador de vista previa</h2>
               <p className="text-xs text-slate-400 mt-1">
                 Prueba interactiva del algoritmo canónico de resolución y formateo del backend.
               </p>
             </div>
-            <span className="px-2.5 py-1 bg-amber-950/60 border border-amber-800/50 text-amber-300 text-[11px] font-mono rounded-lg">
+            <span className="dm-badge dm-badge--warning">
               No Consume Correlativo
             </span>
           </div>
 
-          <form onSubmit={handlePreview} className="space-y-4">
+          <form onSubmit={handlePreview} className="dm-form">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1.5">
@@ -248,15 +238,15 @@ export const DocumentNumberingPage: React.FC = () => {
             </div>
 
             {previewError && (
-              <div className="p-3 bg-rose-950/50 border border-rose-800 rounded-xl text-rose-300 text-xs">
-                ⚠️ {previewError}
+              <div className="dm-alert dm-alert--error" role="alert">
+                {previewError}
               </div>
             )}
 
             <button
               type="submit"
               disabled={previewLoading}
-              className="w-full py-3 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-xl text-sm transition-all shadow-lg shadow-indigo-600/30 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="dm-button dm-button--primary dm-button--full"
             >
               {previewLoading ? (
                 <>
@@ -265,7 +255,7 @@ export const DocumentNumberingPage: React.FC = () => {
                 </>
               ) : (
                 <>
-                  <span>🔍 Generar Vista Previa del Código</span>
+                  <span>Generar vista previa</span>
                 </>
               )}
             </button>
@@ -321,15 +311,13 @@ export const DocumentNumberingPage: React.FC = () => {
               </div>
             </div>
           )}
-        </div>
+        </section>
 
         {/* Right: Rules, Policies & Legal Preservation */}
-        <div className="lg:col-span-5 space-y-6">
+        <aside className="dm-stack">
           {/* Card: Canonical Policies */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <span>🛡️</span> Reglas de Integridad Canónica
-            </h3>
+          <section className="dm-panel">
+            <h3>Reglas de integridad canónica</h3>
 
             <div className="space-y-3 text-xs">
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800/80 space-y-1">
@@ -368,12 +356,11 @@ export const DocumentNumberingPage: React.FC = () => {
                 </p>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Card: External Documents Preservation */}
-          <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-6 space-y-4">
+          <section className="dm-panel">
             <div className="flex items-center gap-2">
-              <span className="text-xl">📑</span>
               <h3 className="text-base font-bold text-white">
                 Documentos Externos y Oficiales
               </h3>
@@ -394,9 +381,9 @@ export const DocumentNumberingPage: React.FC = () => {
                 <li>Soporte para <strong className="text-indigo-400">identidad dual</strong> (recepción interna + correlativo legal).</li>
               </ul>
             </div>
-          </div>
-        </div>
+          </section>
+        </aside>
       </div>
-    </div>
+    </section>
   );
 };

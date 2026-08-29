@@ -7,6 +7,7 @@ import {
   type WarehouseHierarchyItem,
   type ApiErrorResponse,
 } from '../api/structure';
+import './AdminModules.css';
 
 export const StructurePage: React.FC = () => {
   const [structure, setStructure] = useState<StructureResponse | null>(null);
@@ -223,18 +224,18 @@ export const StructurePage: React.FC = () => {
   const selectedBranch = selectedOrg?.branches.find((b) => b.id === selectedBranchId);
 
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <section className="admin-page" aria-labelledby="structure-title">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h1 style={{ margin: '0 0 6px 0', fontSize: '24px', color: '#1e293b' }}>
-            Estructura Organizacional y Almacenes
-          </h1>
+      <header className="admin-header">
+        <div className="admin-header__copy">
+          <span className="admin-header__eyebrow">Red logística</span>
+          <h1 id="structure-title">Estructura y almacenes</h1>
           <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
             Jerarquía Multi-Sede y Multi-Almacén persistida en PostgreSQL con Supabase
           </p>
         </div>
         <button
+          type="button"
           onClick={fetchStructure}
           style={{
             padding: '8px 16px',
@@ -245,13 +246,15 @@ export const StructurePage: React.FC = () => {
             fontWeight: 500,
           }}
         >
-          ↻ Actualizar
+          Actualizar
         </button>
-      </div>
+      </header>
 
       {/* Error Banner */}
       {errorMessage && (
         <div
+          className="admin-alert admin-alert--error"
+          role="alert"
           style={{
             padding: '12px 16px',
             backgroundColor: '#fef2f2',
@@ -268,6 +271,9 @@ export const StructurePage: React.FC = () => {
             <strong>Error [{errorCode}]:</strong> {errorMessage}
           </div>
           <button
+            className="admin-alert__close"
+            type="button"
+            aria-label="Cerrar mensaje de error"
             onClick={() => setErrorMessage(null)}
             style={{ background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', fontWeight: 'bold' }}
           >
@@ -279,12 +285,14 @@ export const StructurePage: React.FC = () => {
       {loading && !structure ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Cargando estructura...</div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px' }}>
+        <div className="admin-structure-layout" style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '24px' }}>
           {/* Hierarchy Tree Sidebar */}
-          <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <aside className="admin-tree" aria-label="Árbol logístico" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px' }}>
+            <div className="admin-tree__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <h3 style={{ margin: 0, fontSize: '16px', color: '#334155' }}>Árbol Logístico</h3>
               <button
+                className="admin-button--primary"
+                type="button"
                 onClick={() => setShowOrgModal(true)}
                 style={{
                   padding: '4px 8px',
@@ -296,7 +304,7 @@ export const StructurePage: React.FC = () => {
                   cursor: 'pointer',
                 }}
               >
-                + Org
+                Nueva organización
               </button>
             </div>
 
@@ -309,6 +317,7 @@ export const StructurePage: React.FC = () => {
                 {structure?.organizations.map((org: OrganizationHierarchyItem) => (
                   <div key={org.id} style={{ marginBottom: '12px' }}>
                     <div
+                      className={`admin-tree-item ${selectedOrgId === org.id ? 'is-selected' : ''}`}
                       onClick={() => {
                         setSelectedOrgId(org.id);
                         if (org.branches.length > 0) setSelectedBranchId(org.branches[0].id);
@@ -325,7 +334,7 @@ export const StructurePage: React.FC = () => {
                         justifyContent: 'space-between',
                       }}
                     >
-                      <span>🏢 {org.name}</span>
+                      <span>{org.name}</span>
                       {org.is_test_data && (
                         <span style={{ fontSize: '10px', backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 6px', borderRadius: '10px' }}>
                           Demo
@@ -338,6 +347,7 @@ export const StructurePage: React.FC = () => {
                       {org.branches.map((b: BranchHierarchyItem) => (
                         <div key={b.id} style={{ marginBottom: '4px' }}>
                           <div
+                            className={`admin-tree-item ${selectedBranchId === b.id ? 'is-selected' : ''}`}
                             onClick={() => {
                               setSelectedOrgId(org.id);
                               setSelectedBranchId(b.id);
@@ -354,7 +364,7 @@ export const StructurePage: React.FC = () => {
                               justifyContent: 'space-between',
                             }}
                           >
-                            <span>📍 {b.name}</span>
+                            <span>{b.name}</span>
                             {b.is_test_data && (
                               <span style={{ fontSize: '9px', backgroundColor: '#fef3c7', color: '#92400e', padding: '1px 4px', borderRadius: '8px' }}>
                                 Demo
@@ -366,6 +376,7 @@ export const StructurePage: React.FC = () => {
                           <div style={{ paddingLeft: '14px', marginTop: '2px' }}>
                             {b.warehouses.map((w: WarehouseHierarchyItem) => (
                               <div
+                                className="admin-tree-leaf"
                                 key={w.id}
                                 style={{
                                   fontSize: '12px',
@@ -376,7 +387,7 @@ export const StructurePage: React.FC = () => {
                                   justifyContent: 'space-between',
                                 }}
                               >
-                                <span>📦 {w.name}</span>
+                                <span>{w.name}</span>
                                 {w.is_test_data && (
                                   <span style={{ fontSize: '8px', backgroundColor: '#fef3c7', color: '#92400e', padding: '1px 4px', borderRadius: '6px' }}>
                                     Demo
@@ -392,10 +403,10 @@ export const StructurePage: React.FC = () => {
                 ))}
               </div>
             )}
-          </div>
+          </aside>
 
           {/* Details & Management Panel */}
-          <div>
+          <div className="admin-structure-details">
             {selectedOrg ? (
               <div>
                 {/* Organization Card */}
@@ -917,6 +928,6 @@ export const StructurePage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };

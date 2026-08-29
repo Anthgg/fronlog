@@ -7,6 +7,7 @@ import {
   getAuditEvent,
   listAuditEvents,
 } from '../api/audit';
+import './AdminModules.css';
 
 export const AuditPage: React.FC = () => {
   const [events, setEvents] = useState<AuditEvent[]>([]);
@@ -112,25 +113,25 @@ export const AuditPage: React.FC = () => {
     switch (result) {
       case 'SUCCESS':
         return (
-          <span style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+          <span className="admin-badge admin-badge--success" style={{ backgroundColor: '#dcfce7', color: '#166534', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
             SUCCESS
           </span>
         );
       case 'FAILURE':
         return (
-          <span style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+          <span className="admin-badge admin-badge--danger" style={{ backgroundColor: '#fee2e2', color: '#991b1b', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
             FAILURE
           </span>
         );
       case 'DENIED':
         return (
-          <span style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+          <span className="admin-badge admin-badge--warning" style={{ backgroundColor: '#fef3c7', color: '#92400e', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
             DENIED
           </span>
         );
       default:
         return (
-          <span style={{ backgroundColor: '#e2e8f0', color: '#334155', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
+          <span className="admin-badge" style={{ backgroundColor: '#e2e8f0', color: '#334155', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 600 }}>
             {result}
           </span>
         );
@@ -140,20 +141,20 @@ export const AuditPage: React.FC = () => {
   const renderActorBadge = (actorType: string) => {
     if (actorType === 'UNAUTHENTICATED') {
       return (
-        <span style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500, border: '1px solid #cbd5e1' }}>
+        <span className="admin-badge" style={{ backgroundColor: '#f1f5f9', color: '#475569', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500, border: '1px solid #cbd5e1' }}>
           Sin autenticar
         </span>
       );
     }
     if (actorType === 'SYSTEM') {
       return (
-        <span style={{ backgroundColor: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500, border: '1px solid #bae6fd' }}>
+        <span className="admin-badge admin-badge--info" style={{ backgroundColor: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500, border: '1px solid #bae6fd' }}>
           Sistema
         </span>
       );
     }
     return (
-      <span style={{ backgroundColor: '#ede9fe', color: '#6d28d9', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500, border: '1px solid #ddd6fe' }}>
+      <span className="admin-badge admin-badge--info" style={{ backgroundColor: '#ede9fe', color: '#6d28d9', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500, border: '1px solid #ddd6fe' }}>
         {actorType}
       </span>
     );
@@ -175,18 +176,19 @@ export const AuditPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1400px', margin: '0 auto', padding: '24px 16px' }}>
+    <section className="admin-page" aria-labelledby="audit-title">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-        <div>
-          <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
-            📜 Registro Unificado de Auditoría (Append-Only)
-          </h1>
+      <header className="admin-header">
+        <div className="admin-header__copy">
+          <span className="admin-header__eyebrow">Trazabilidad operativa</span>
+          <h1 id="audit-title">Registro unificado de auditoría</h1>
           <p style={{ fontSize: '13px', color: '#64748b', margin: 0 }}>
             Trazabilidad inmutable de eventos, capturas before/after, correlación transversal y exportación autorizada desde backend.
           </p>
         </div>
         <button
+          className="admin-button--success"
+          type="button"
           onClick={handleExportCsv}
           disabled={exporting}
           style={{
@@ -203,18 +205,18 @@ export const AuditPage: React.FC = () => {
             gap: '6px',
           }}
         >
-          {exporting ? 'Generando CSV...' : '📥 Exportar CSV (Backend)'}
+          {exporting ? 'Generando CSV...' : 'Exportar CSV'}
         </button>
-      </div>
+      </header>
 
       {/* Info Card */}
-      <div style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', fontSize: '12px', color: '#1e40af' }}>
-        💡 <strong>Inmutabilidad y Trazabilidad (F007):</strong> Cada mutación sobre organizaciones, sedes, almacenes, roles y permisos genera un <code>AuditEvent</code> inmutable. Las operaciones actuales sin login registran <code>Sin autenticar</code> (preparado para vinculación con sesión en F008).
+      <div className="admin-alert admin-alert--info" style={{ backgroundColor: '#eff6ff', border: '1px solid #bfdbfe', borderRadius: '8px', padding: '12px 16px', marginBottom: '20px', fontSize: '12px', color: '#1e40af' }}>
+        <span><strong>Registro inmutable:</strong> cada mutación sobre organizaciones, sedes, almacenes, roles y permisos genera un <code>AuditEvent</code> trazable.</span>
       </div>
 
       {/* Filter Bar */}
-      <form onSubmit={handleFilterSubmit} style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <form className="admin-filter-bar" onSubmit={handleFilterSubmit} style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', padding: '16px', marginBottom: '20px', display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'flex-end' }}>
+        <div className="admin-filter-field" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Recurso</label>
           <select
             value={resourceType}
@@ -231,7 +233,7 @@ export const AuditPage: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="admin-filter-field" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Acción</label>
           <input
             type="text"
@@ -242,7 +244,7 @@ export const AuditPage: React.FC = () => {
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="admin-filter-field" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Resultado</label>
           <select
             value={resultFilter}
@@ -256,7 +258,7 @@ export const AuditPage: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+        <div className="admin-filter-field" style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Actor</label>
           <select
             value={actorTypeFilter}
@@ -270,7 +272,7 @@ export const AuditPage: React.FC = () => {
           </select>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: '180px' }}>
+        <div className="admin-filter-field" style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: '1', minWidth: '180px' }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: '#475569' }}>Correlation ID</label>
           <input
             type="text"
@@ -281,12 +283,13 @@ export const AuditPage: React.FC = () => {
           />
         </div>
 
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="admin-filter-actions" style={{ display: 'flex', gap: '8px' }}>
           <button
+            className="admin-button--primary"
             type="submit"
             style={{ backgroundColor: '#2563eb', color: '#ffffff', padding: '7px 16px', borderRadius: '6px', border: 'none', fontSize: '13px', fontWeight: 600, cursor: 'pointer' }}
           >
-            🔍 Filtrar
+            Aplicar filtros
           </button>
           <button
             type="button"
@@ -300,14 +303,15 @@ export const AuditPage: React.FC = () => {
 
       {/* Error Message */}
       {error && (
-        <div style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px 16px', borderRadius: '6px', marginBottom: '16px', fontSize: '13px' }}>
-          ⚠️ {error}
+        <div className="admin-alert admin-alert--error" role="alert" style={{ backgroundColor: '#fef2f2', border: '1px solid #fecaca', color: '#b91c1c', padding: '12px 16px', borderRadius: '6px', marginBottom: '16px', fontSize: '13px' }}>
+          <span>{error}</span>
         </div>
       )}
 
       {/* Events Table */}
-      <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+      <div className="admin-table-card" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+        <div className="admin-table-scroll" role="region" tabIndex={0} aria-label="Eventos de auditoría">
+        <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
           <thead>
             <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
               <th style={{ padding: '12px 16px', fontWeight: 600 }}>Fecha / Hora (UTC)</th>
@@ -355,6 +359,7 @@ export const AuditPage: React.FC = () => {
                   </td>
                   <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                     <button
+                      type="button"
                       onClick={() => handleOpenDetail(e.id)}
                       style={{
                         backgroundColor: '#f8fafc',
@@ -375,14 +380,16 @@ export const AuditPage: React.FC = () => {
             )}
           </tbody>
         </table>
+        </div>
 
         {/* Pagination Bar */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: '13px', color: '#64748b' }}>
+        <div className="admin-pagination" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', backgroundColor: '#f8fafc', borderTop: '1px solid #e2e8f0', fontSize: '13px', color: '#64748b' }}>
           <div>
             Mostrando {events.length > 0 ? page * limit + 1 : 0} a {Math.min((page + 1) * limit, total)} de {total} eventos
           </div>
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
+              type="button"
               onClick={() => setPage((p) => Math.max(0, p - 1))}
               disabled={page === 0 || loading}
               style={{
@@ -398,6 +405,7 @@ export const AuditPage: React.FC = () => {
               ◀ Anterior
             </button>
             <button
+              type="button"
               onClick={() => setPage((p) => p + 1)}
               disabled={(page + 1) * limit >= total || loading}
               style={{
@@ -419,6 +427,10 @@ export const AuditPage: React.FC = () => {
       {/* Detail Modal */}
       {selectedEventId && (
         <div
+          className="admin-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="audit-detail-title"
           style={{
             position: 'fixed',
             top: 0,
@@ -435,6 +447,7 @@ export const AuditPage: React.FC = () => {
           onClick={() => setSelectedEventId(null)}
         >
           <div
+            className="admin-modal__panel admin-modal__panel--wide"
             style={{
               backgroundColor: '#ffffff',
               borderRadius: '12px',
@@ -451,9 +464,9 @@ export const AuditPage: React.FC = () => {
               <div style={{ padding: '32px', textAlign: 'center', color: '#64748b' }}>Cargando detalles del evento...</div>
             ) : (
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div className="admin-modal__header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                   <div>
-                    <h2 style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
+                    <h2 id="audit-detail-title" style={{ fontSize: '18px', fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' }}>
                       Detalle de Evento: <code>{eventDetail.action}</code>
                     </h2>
                     <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
@@ -461,6 +474,9 @@ export const AuditPage: React.FC = () => {
                     </p>
                   </div>
                   <button
+                    className="admin-button--icon"
+                    type="button"
+                    aria-label="Cerrar detalle de auditoría"
                     onClick={() => setSelectedEventId(null)}
                     style={{
                       background: 'none',
@@ -475,7 +491,7 @@ export const AuditPage: React.FC = () => {
                 </div>
 
                 {/* Metadata Grid */}
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '12px' }}>
+                <div className="admin-grid admin-card admin-card--soft" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', backgroundColor: '#f8fafc', padding: '12px', borderRadius: '8px', marginBottom: '20px', fontSize: '12px' }}>
                   <div>
                     <span style={{ color: '#64748b' }}>Fecha:</span> <strong>{new Date(eventDetail.occurred_at).toLocaleString()}</strong>
                   </div>
@@ -501,10 +517,10 @@ export const AuditPage: React.FC = () => {
 
                 {/* Before / After Snapshot Comparison */}
                 <h3 style={{ fontSize: '14px', fontWeight: 600, color: '#0f172a', marginBottom: '8px' }}>
-                  📸 Snapshots Before / After
+                  Comparación antes / después
                 </h3>
                 {eventDetail.before_data || eventDetail.after_data ? (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
+                  <table className="admin-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '12px', marginBottom: '20px', border: '1px solid #e2e8f0', borderRadius: '6px' }}>
                     <thead>
                       <tr style={{ backgroundColor: '#f1f5f9', borderBottom: '1px solid #e2e8f0', textAlign: 'left' }}>
                         <th style={{ padding: '8px 12px', width: '25%' }}>Campo</th>
@@ -547,6 +563,8 @@ export const AuditPage: React.FC = () => {
 
                 <div style={{ marginTop: '20px', textAlign: 'right' }}>
                   <button
+                    className="admin-button--primary"
+                    type="button"
                     onClick={() => setSelectedEventId(null)}
                     style={{
                       backgroundColor: '#2563eb',
@@ -567,7 +585,7 @@ export const AuditPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
 

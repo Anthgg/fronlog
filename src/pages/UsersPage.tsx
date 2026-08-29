@@ -4,6 +4,7 @@ import { useAuth } from "../context/AuthContext";
 import { RoleResponse, rolesApi } from "../api/roles";
 import { ApiError } from "../api/client";
 import { StepUpDialog, StepUpChallengeInfo } from "../components/StepUpDialog";
+import "./AdminModules.css";
 
 export const UsersPage: React.FC = () => {
   const { hasPermission, organizationId } = useAuth();
@@ -175,19 +176,20 @@ export const UsersPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem" }}>
+    <section className="admin-page" aria-labelledby="users-title">
       {/* Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
-        <div>
-          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc", margin: "0 0 0.5rem 0" }}>
-            Administración de Usuarios e Identidad Real
-          </h1>
+      <header className="admin-header">
+        <div className="admin-header__copy">
+          <span className="admin-header__eyebrow">Identidad y acceso</span>
+          <h1 id="users-title">Administración de usuarios</h1>
           <p style={{ color: "#94a3b8", fontSize: "0.95rem", margin: 0 }}>
             Gestión de identidades con asignación de roles RBAC y control de acceso seguro.
           </p>
         </div>
         {hasPermission("users.create") && (
           <button
+            className="admin-button--primary"
+            type="button"
             onClick={() => setShowCreateModal(true)}
             style={{
               padding: "0.625rem 1.25rem",
@@ -202,13 +204,15 @@ export const UsersPage: React.FC = () => {
               gap: "0.5rem",
             }}
           >
-            <span>➕</span> Nuevo Usuario
+            Nuevo usuario
           </button>
         )}
-      </div>
+      </header>
 
       {errorMsg && (
         <div
+          className="admin-alert admin-alert--error"
+          role="alert"
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.15)",
             border: "1px solid #ef4444",
@@ -224,6 +228,8 @@ export const UsersPage: React.FC = () => {
 
       {successMsg && (
         <div
+          className="admin-alert admin-alert--success"
+          role="status"
           style={{
             backgroundColor: "rgba(34, 197, 94, 0.15)",
             border: "1px solid #22c55e",
@@ -239,6 +245,7 @@ export const UsersPage: React.FC = () => {
 
       {/* Users Table */}
       <div
+        className="admin-table-card"
         style={{
           backgroundColor: "#1e293b",
           border: "1px solid #334155",
@@ -246,7 +253,8 @@ export const UsersPage: React.FC = () => {
           overflow: "hidden",
         }}
       >
-        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+        <div className="admin-table-scroll" tabIndex={0} aria-label="Tabla de usuarios">
+        <table className="admin-table" style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
           <thead>
             <tr style={{ backgroundColor: "#0f172a", borderBottom: "1px solid #334155", color: "#94a3b8", fontSize: "0.85rem" }}>
               <th style={{ padding: "1rem" }}>USUARIO</th>
@@ -280,10 +288,7 @@ export const UsersPage: React.FC = () => {
                   }}
                 >
                   <td style={{ padding: "1rem", fontWeight: 600 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                      <span>👤</span>
-                      <span>{u.display_name}</span>
-                    </div>
+                    <span>{u.display_name}</span>
                   </td>
                   <td style={{ padding: "1rem", color: "#cbd5e1" }}>{u.email}</td>
                   <td style={{ padding: "1rem" }}>
@@ -311,6 +316,7 @@ export const UsersPage: React.FC = () => {
                   </td>
                   <td style={{ padding: "1rem" }}>
                     <span
+                      className={`admin-badge ${u.is_active ? "admin-badge--success" : "admin-badge--danger"}`}
                       style={{
                         padding: "0.25rem 0.5rem",
                         borderRadius: "9999px",
@@ -328,6 +334,7 @@ export const UsersPage: React.FC = () => {
                     <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
                       {hasPermission("users.roles.assign") && (
                         <button
+                          type="button"
                           onClick={() => handleOpenRolesModal(u)}
                           style={{
                             padding: "0.35rem 0.75rem",
@@ -344,6 +351,8 @@ export const UsersPage: React.FC = () => {
                       )}
                       {hasPermission("users.disable") && u.is_active && (
                         <button
+                          className="admin-button--danger"
+                          type="button"
                           onClick={() => handleDisableUser(u)}
                           style={{
                             padding: "0.35rem 0.75rem",
@@ -365,11 +374,16 @@ export const UsersPage: React.FC = () => {
             )}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* Create User Modal */}
       {showCreateModal && (
         <div
+          className="admin-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="create-user-title"
           style={{
             position: "fixed",
             top: 0,
@@ -386,6 +400,7 @@ export const UsersPage: React.FC = () => {
           }}
         >
           <div
+            className="admin-modal__panel"
             style={{
               backgroundColor: "#1e293b",
               border: "1px solid #334155",
@@ -397,7 +412,7 @@ export const UsersPage: React.FC = () => {
             }}
           >
             <form onSubmit={handleCreateUser}>
-              <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.25rem" }}>Crear Nuevo Usuario</h3>
+              <h3 id="create-user-title" style={{ margin: "0 0 1rem 0", fontSize: "1.25rem" }}>Crear nuevo usuario</h3>
 
               <div style={{ marginBottom: "1rem" }}>
                 <label style={{ display: "block", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.35rem" }}>
@@ -495,7 +510,7 @@ export const UsersPage: React.FC = () => {
                 </div>
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <div className="admin-form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
@@ -511,6 +526,7 @@ export const UsersPage: React.FC = () => {
                   Cancelar
                 </button>
                 <button
+                  className="admin-button--primary"
                   type="submit"
                   disabled={submitting}
                   style={{
@@ -534,6 +550,10 @@ export const UsersPage: React.FC = () => {
       {/* Assign Roles Modal */}
       {showRolesModal && selectedUser && (
         <div
+          className="admin-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="assign-user-roles-title"
           style={{
             position: "fixed",
             top: 0,
@@ -550,6 +570,7 @@ export const UsersPage: React.FC = () => {
           }}
         >
           <div
+            className="admin-modal__panel"
             style={{
               backgroundColor: "#1e293b",
               border: "1px solid #334155",
@@ -560,7 +581,7 @@ export const UsersPage: React.FC = () => {
               color: "#f8fafc",
             }}
           >
-            <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>
+            <h3 id="assign-user-roles-title" style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>
               Asignar Roles a {selectedUser.display_name}
             </h3>
             <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
@@ -602,8 +623,9 @@ export const UsersPage: React.FC = () => {
               })}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+            <div className="admin-form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
               <button
+                className="admin-button--primary"
                 type="button"
                 onClick={() => setShowRolesModal(false)}
                 style={{
@@ -654,6 +676,6 @@ export const UsersPage: React.FC = () => {
           setPendingAction(null);
         }}
       />
-    </div>
+    </section>
   );
 };

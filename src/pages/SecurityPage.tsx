@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { mfaApi, MfaStatusResponse, MfaTotpEnrollResponse } from "../api/mfa";
 import { ApiError } from "../api/client";
+import "./AdminModules.css";
 
 export const SecurityPage: React.FC = () => {
   const { user, refreshMfaStatus } = useAuth();
@@ -143,19 +144,22 @@ export const SecurityPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: "800px", margin: "0 auto", padding: "1.5rem" }}>
+    <section className="admin-page admin-security-card" aria-labelledby="security-title">
       {/* Header */}
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc", margin: "0 0 0.5rem 0" }}>
-          Seguridad y Doble Factor (MFA)
-        </h1>
+      <header className="admin-header">
+        <div className="admin-header__copy">
+        <span className="admin-header__eyebrow">Protección de la cuenta</span>
+        <h1 id="security-title">Seguridad y doble factor</h1>
         <p style={{ color: "#94a3b8", fontSize: "0.95rem", margin: 0 }}>
           Administra los factores de autenticación multifactor (RFC 6238) y la protección para acciones críticas.
         </p>
-      </div>
+        </div>
+      </header>
 
       {errorMsg && (
         <div
+          className="admin-alert admin-alert--error"
+          role="alert"
           style={{
             backgroundColor: "rgba(239, 68, 68, 0.15)",
             border: "1px solid #ef4444",
@@ -171,6 +175,8 @@ export const SecurityPage: React.FC = () => {
 
       {successMsg && (
         <div
+          className="admin-alert admin-alert--success"
+          role="status"
           style={{
             backgroundColor: "rgba(34, 197, 94, 0.15)",
             border: "1px solid #22c55e",
@@ -186,6 +192,7 @@ export const SecurityPage: React.FC = () => {
 
       {/* Main Status Card */}
       <div
+        className="admin-status-card"
         style={{
           backgroundColor: "#1e293b",
           border: "1px solid #334155",
@@ -194,9 +201,10 @@ export const SecurityPage: React.FC = () => {
           marginBottom: "2rem",
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div className="admin-security-summary" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <div className="admin-security-summary__identity" style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
             <div
+              className="admin-security-indicator"
               style={{
                 width: "48px",
                 height: "48px",
@@ -209,7 +217,7 @@ export const SecurityPage: React.FC = () => {
                 fontSize: "1.5rem",
               }}
             >
-              {status?.enabled ? "🛡️" : "⚠️"}
+              <span>{status?.enabled ? "Activado" : "Inactivo"}</span>
             </div>
             <div>
               <h3 style={{ margin: 0, fontSize: "1.15rem", color: "#f8fafc" }}>
@@ -221,6 +229,7 @@ export const SecurityPage: React.FC = () => {
             </div>
           </div>
           <span
+            className={`admin-badge ${status?.enabled ? "admin-badge--success" : "admin-badge--danger"}`}
             style={{
               padding: "0.35rem 0.75rem",
               borderRadius: "9999px",
@@ -257,6 +266,7 @@ export const SecurityPage: React.FC = () => {
                 </span>
               </div>
               <button
+                className="admin-button--danger"
                 type="button"
                 onClick={handleRegenerateCodes}
                 disabled={loading}
@@ -301,6 +311,7 @@ export const SecurityPage: React.FC = () => {
               todas las operaciones sensibles requerirán verificación de seguridad (Step-Up).
             </p>
             <button
+              className="admin-button--primary"
               type="button"
               onClick={() => {
                 setIsEnrolling(true);
@@ -326,6 +337,10 @@ export const SecurityPage: React.FC = () => {
       {/* Enrollment Wizard Modal */}
       {isEnrolling && (
         <div
+          className="admin-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="mfa-enrollment-title"
           style={{
             position: "fixed",
             top: 0,
@@ -342,6 +357,7 @@ export const SecurityPage: React.FC = () => {
           }}
         >
           <div
+            className="admin-modal__panel"
             style={{
               backgroundColor: "#1e293b",
               border: "1px solid #334155",
@@ -355,7 +371,7 @@ export const SecurityPage: React.FC = () => {
             {/* Step 1: Re-authenticate */}
             {enrollStep === 1 && (
               <form onSubmit={handleStartEnroll}>
-                <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>Confirmar Identidad</h3>
+                <h3 id="mfa-enrollment-title" style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>Confirmar identidad</h3>
                 <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
                   Ingresa tu contraseña actual para iniciar la configuración de MFA.
                 </p>
@@ -382,7 +398,7 @@ export const SecurityPage: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+                <div className="admin-form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
                   <button
                     type="button"
                     onClick={() => setIsEnrolling(false)}
@@ -398,6 +414,7 @@ export const SecurityPage: React.FC = () => {
                     Cancelar
                   </button>
                   <button
+                    className="admin-button--primary"
                     type="submit"
                     disabled={loading || !currentPassword}
                     style={{
@@ -419,7 +436,7 @@ export const SecurityPage: React.FC = () => {
             {/* Step 2: Scan QR & Verify OTP */}
             {enrollStep === 2 && enrollData && (
               <form onSubmit={handleConfirmTotp}>
-                <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>Escanear Código QR</h3>
+                <h3 id="mfa-enrollment-title" style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>Escanear código QR</h3>
                 <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1rem" }}>
                   Abre tu aplicación de autenticación (Google Authenticator, Authy) y escanea la imagen:
                 </p>
@@ -486,7 +503,7 @@ export const SecurityPage: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+                <div className="admin-form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
                   <button
                     type="button"
                     onClick={() => setIsEnrolling(false)}
@@ -502,6 +519,7 @@ export const SecurityPage: React.FC = () => {
                     Cancelar
                   </button>
                   <button
+                    className="admin-button--primary"
                     type="submit"
                     disabled={loading || totpCode.length < 6}
                     style={{
@@ -523,8 +541,8 @@ export const SecurityPage: React.FC = () => {
             {/* Step 3: One-Time Recovery Codes */}
             {enrollStep === 3 && (
               <div>
-                <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem", color: "#4ade80" }}>
-                  🛡️ ¡MFA Configurado Correctamente!
+                <h3 id="mfa-enrollment-title" style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem", color: "#4ade80" }}>
+                  MFA configurado correctamente
                 </h3>
                 <p style={{ color: "#cbd5e1", fontSize: "0.85rem", marginBottom: "1rem" }}>
                   Guarda estos <strong>8 códigos de recuperación de un solo uso</strong> en un lugar seguro. Si pierdes el
@@ -532,6 +550,7 @@ export const SecurityPage: React.FC = () => {
                 </p>
 
                 <div
+                  className="admin-recovery-grid"
                   style={{
                     display: "grid",
                     gridTemplateColumns: "1fr 1fr",
@@ -574,7 +593,7 @@ export const SecurityPage: React.FC = () => {
                       fontSize: "0.85rem",
                     }}
                   >
-                    {copiedCodes ? "✅ Copiados al portapapeles" : "📋 Copiar todos los códigos"}
+                    {copiedCodes ? "Copiados al portapapeles" : "Copiar todos los códigos"}
                   </button>
                 </div>
 
@@ -599,6 +618,7 @@ export const SecurityPage: React.FC = () => {
 
                 <div style={{ display: "flex", justifyContent: "flex-end" }}>
                   <button
+                    className="admin-button--primary"
                     type="button"
                     disabled={!savedAcknowledged}
                     onClick={handleFinishEnroll}
@@ -624,6 +644,10 @@ export const SecurityPage: React.FC = () => {
       {/* Disable MFA Modal */}
       {isDisabling && (
         <div
+          className="admin-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="disable-mfa-title"
           style={{
             position: "fixed",
             top: 0,
@@ -640,6 +664,7 @@ export const SecurityPage: React.FC = () => {
           }}
         >
           <div
+            className="admin-modal__panel"
             style={{
               backgroundColor: "#1e293b",
               border: "1px solid #334155",
@@ -651,7 +676,7 @@ export const SecurityPage: React.FC = () => {
             }}
           >
             <form onSubmit={handleDisableMfa}>
-              <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem", color: "#f87171" }}>
+              <h3 id="disable-mfa-title" style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem", color: "#f87171" }}>
                 Desactivar Doble Factor (MFA)
               </h3>
               <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
@@ -680,7 +705,7 @@ export const SecurityPage: React.FC = () => {
                 />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <div className="admin-form-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
                 <button
                   type="button"
                   onClick={() => setIsDisabling(false)}
@@ -696,6 +721,7 @@ export const SecurityPage: React.FC = () => {
                   Cancelar
                 </button>
                 <button
+                  className="admin-button--danger"
                   type="submit"
                   disabled={loading || !disablePassword}
                   style={{
@@ -719,6 +745,10 @@ export const SecurityPage: React.FC = () => {
       {/* Regenerated Codes Modal */}
       {isRegenerating && regenCodes && (
         <div
+          className="admin-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="recovery-codes-title"
           style={{
             position: "fixed",
             top: 0,
@@ -735,6 +765,7 @@ export const SecurityPage: React.FC = () => {
           }}
         >
           <div
+            className="admin-modal__panel"
             style={{
               backgroundColor: "#1e293b",
               border: "1px solid #334155",
@@ -745,7 +776,7 @@ export const SecurityPage: React.FC = () => {
               color: "#f8fafc",
             }}
           >
-            <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>
+            <h3 id="recovery-codes-title" style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>
               Nuevos Códigos de Recuperación
             </h3>
             <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1rem" }}>
@@ -753,6 +784,7 @@ export const SecurityPage: React.FC = () => {
             </p>
 
             <div
+              className="admin-recovery-grid"
               style={{
                 display: "grid",
                 gridTemplateColumns: "1fr 1fr",
@@ -795,9 +827,10 @@ export const SecurityPage: React.FC = () => {
                   fontSize: "0.85rem",
                 }}
               >
-                {copiedCodes ? "✅ Copiados" : "📋 Copiar códigos"}
+                {copiedCodes ? "Copiados" : "Copiar códigos"}
               </button>
               <button
+                className="admin-button--primary"
                 type="button"
                 onClick={() => {
                   setIsRegenerating(false);
@@ -819,6 +852,6 @@ export const SecurityPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
