@@ -1,44 +1,51 @@
-import { API_BASE_URL } from './client';
+import { apiFetch, API_BASE_URL } from './client';
 
-export interface AuditEvent {
+export interface AuditEventItem {
   id: string;
   occurred_at: string;
   actor_type: string;
   actor_id: string | null;
   session_id: string | null;
   ip_address: string | null;
+  resource_type: string;
+  resource_id: string | null;
+  action: string;
+  result: 'SUCCESS' | 'FAILURE' | 'DENIED';
+  reason: string | null;
+  correlation_id: string | null;
+  is_test_data: boolean;
+}
+
+export type AuditEvent = AuditEventItem;
+
+export interface AuditEventDetail extends AuditEventItem {
   user_agent: string | null;
   organization_id: string | null;
   branch_id: string | null;
   warehouse_id: string | null;
-  resource_type: string;
-  resource_id: string | null;
-  action: string;
-  result: 'SUCCESS' | 'FAILURE' | 'DENIED' | string;
-  reason: string | null;
-  correlation_id: string;
-  request_id: string | null;
-  is_test_data: boolean;
-}
-
-export interface AuditEventDetail extends AuditEvent {
   before_data: Record<string, unknown> | null;
   after_data: Record<string, unknown> | null;
   metadata: Record<string, unknown> | null;
+  request_id: string | null;
 }
 
 export interface AuditListResponse {
   total: number;
   limit: number;
   offset: number;
-  items: AuditEvent[];
+  items: AuditEventItem[];
 }
 
-export interface AuditFilters {
+export interface AuditQueryParams {
   date_from?: string;
   date_to?: string;
   actor_type?: string;
+  actor_id?: string;
+  organization_id?: string;
+  branch_id?: string;
+  warehouse_id?: string;
   resource_type?: string;
+  resource_id?: string;
   action?: string;
   result?: string;
   correlation_id?: string;
@@ -47,58 +54,58 @@ export interface AuditFilters {
   offset?: number;
 }
 
-function buildQueryParams(filters?: AuditFilters): string {
-  if (!filters) return '';
-  const params = new URLSearchParams();
-  if (filters.date_from) params.append('date_from', filters.date_from);
-  if (filters.date_to) params.append('date_to', filters.date_to);
-  if (filters.actor_type) params.append('actor_type', filters.actor_type);
-  if (filters.resource_type) params.append('resource_type', filters.resource_type);
-  if (filters.action) params.append('action', filters.action);
-  if (filters.result) params.append('result', filters.result);
-  if (filters.correlation_id) params.append('correlation_id', filters.correlation_id);
-  if (filters.is_test_data !== undefined) params.append('is_test_data', String(filters.is_test_data));
-  if (filters.limit !== undefined) params.append('limit', String(filters.limit));
-  if (filters.offset !== undefined) params.append('offset', String(filters.offset));
-  const queryStr = params.toString();
-  return queryStr ? `?${queryStr}` : '';
-}
+export type AuditFilters = AuditQueryParams;
 
-export async function listAuditEvents(filters?: AuditFilters): Promise<AuditListResponse> {
-  const query = buildQueryParams(filters);
-  const response = await fetch(`${API_BASE_URL}/api/logistics/audit-events${query}`);
-  if (!response.ok) {
-    throw new Error(`Error al consultar auditoría: ${response.status} ${response.statusText}`);
-  }
-  return response.json();
-}
+export const auditApi = {
+  listAuditEvents: async (params: AuditQueryParams = {}): Promise<AuditListResponse> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        searchParams.append(key, String(value));
+      }
+    });
 
-export async function getAuditEvent(id: string): Promise<AuditEventDetail> {
-  const response = await fetch(`${API_BASE_URL}/api/logistics/audit-events/${id}`);
-  if (!response.ok) {
-    throw new Error(`Error al obtener detalle de evento: ${response.status} ${response.statusText}`);
-  }
-  return response.json();
-}
+    const queryStr = searchParams.toString();
+    const url = `/api/logistics/audit-events${queryStr ? `?${queryStr}` : ''}`;
+    return apiFetch<AuditListResponse>(url);
+  },
 
-export function getAuditCsvExportUrl(filters?: AuditFilters): string {
-  const query = buildQueryParams(filters);
-  return `${API_BASE_URL}/api/logistics/audit-events/export${query}`;
-}
+  getAuditEventDetail: async (eventId: string): Promise<AuditEventDetail> => {
+    return apiFetch<AuditEventDetail>(`/api/logistics/audit-events/${eventId}`);
+  },
 
-export async function downloadAuditCsv(filters?: AuditFilters): Promise<void> {
-  const query = buildQueryParams(filters);
-  const response = await fetch(`${API_BASE_URL}/api/logistics/audit-events/export${query}`);
-  if (!response.ok) {
-    throw new Error(`Error al descargar CSV de auditoría: ${response.status} ${response.statusText}`);
-  }
-  const blob = await response.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `audit_trail_${new Date().toISOString().slice(0, 10)}.csv`;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
-}
+  downloadCsv: async (params: AuditQueryParams = {}): Promise<void> => {
+    const searchParams = new URLSearchParams();
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '' && key !== 'limit' && key !== 'offset') {
+        searchParams.append(key, String(value));
+      }
+    });
+
+    const queryStr = searchParams.toString();
+    const url = `${API_BASE_URL}/api/logistics/audit-events/export${queryStr ? `?${queryStr}` : ''}`;
+
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    if (!res.ok) {
+      throw new Error(`Export failed: ${res.status} ${res.statusText}`);
+    }
+
+    const blob = await res.blob();
+    const downloadUrl = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    a.download = `audit_trail_${new Date().toISOString().replace(/[:.]/g, '-')}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(downloadUrl);
+  },
+};
+
+export const listAuditEvents = auditApi.listAuditEvents;
+export const getAuditEvent = auditApi.getAuditEventDetail;
+export const downloadAuditCsv = auditApi.downloadCsv;

@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+import { apiFetch } from './client';
 
 export interface RoleResponse {
   id: string;
@@ -55,66 +55,43 @@ export interface ApiErrorResponse {
   details?: Record<string, unknown>;
 }
 
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    let errorData: ApiErrorResponse;
-    try {
-      errorData = await res.json();
-    } catch {
-      errorData = {
-        code: 'HTTP_ERROR',
-        message: `Error HTTP ${res.status}: ${res.statusText}`,
-      };
-    }
-    throw errorData;
-  }
-  if (res.status === 204) {
-    return {} as T;
-  }
-  return res.json();
-}
-
 export const rolesApi = {
   listRoles: async (organizationId?: string): Promise<RoleResponse[]> => {
     const url = organizationId
-      ? `${API_BASE_URL}/api/logistics/roles?organization_id=${organizationId}`
-      : `${API_BASE_URL}/api/logistics/roles`;
-    const res = await fetch(url);
-    return handleResponse<RoleResponse[]>(res);
+      ? `/api/logistics/roles?organization_id=${organizationId}`
+      : '/api/logistics/roles';
+    return apiFetch<RoleResponse[]>(url);
   },
 
-  getRole: async (roleId: string): Promise<RoleResponse> => {
-    const res = await fetch(`${API_BASE_URL}/api/logistics/roles/${roleId}`);
-    return handleResponse<RoleResponse>(res);
-  },
-
-  getMatrix: async (): Promise<RoleMatrixResponse> => {
-    const res = await fetch(`${API_BASE_URL}/api/logistics/roles/matrix`);
-    return handleResponse<RoleMatrixResponse>(res);
+  getRole: async (id: string): Promise<RoleResponse> => {
+    return apiFetch<RoleResponse>(`/api/logistics/roles/${id}`);
   },
 
   createRole: async (data: RoleCreate): Promise<RoleResponse> => {
-    const res = await fetch(`${API_BASE_URL}/api/logistics/roles`, {
+    return apiFetch<RoleResponse>('/api/logistics/roles', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<RoleResponse>(res);
   },
 
-  updateRole: async (roleId: string, data: RoleUpdate): Promise<RoleResponse> => {
-    const res = await fetch(`${API_BASE_URL}/api/logistics/roles/${roleId}`, {
+  updateRole: async (id: string, data: RoleUpdate): Promise<RoleResponse> => {
+    return apiFetch<RoleResponse>(`/api/logistics/roles/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<RoleResponse>(res);
   },
 
-  deleteRole: async (roleId: string): Promise<void> => {
-    const res = await fetch(`${API_BASE_URL}/api/logistics/roles/${roleId}`, {
+  deleteRole: async (id: string): Promise<void> => {
+    return apiFetch<void>(`/api/logistics/roles/${id}`, {
       method: 'DELETE',
     });
-    return handleResponse<void>(res);
+  },
+
+  getRoleMatrix: async (): Promise<RoleMatrixResponse> => {
+    return apiFetch<RoleMatrixResponse>('/api/logistics/roles/matrix');
+  },
+
+  getMatrix: async (): Promise<RoleMatrixResponse> => {
+    return apiFetch<RoleMatrixResponse>('/api/logistics/roles/matrix');
   },
 };

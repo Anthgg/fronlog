@@ -1,3 +1,5 @@
+import { apiFetch } from './client';
+
 export interface OperationalLocation {
   id?: string;
   label: string;
@@ -48,36 +50,31 @@ export interface Warehouse {
   updated_at: string;
 }
 
-export interface WarehouseHierarchyItem {
+export interface BranchTreeItem {
   id: string;
   code: string;
   name: string;
   is_active: boolean;
   is_test_data: boolean;
-  location?: OperationalLocation | null;
+  location: OperationalLocation | null;
+  warehouses: Warehouse[];
 }
 
-export interface BranchHierarchyItem {
+export interface OrganizationTreeItem {
   id: string;
   code: string;
   name: string;
   is_active: boolean;
   is_test_data: boolean;
-  location?: OperationalLocation | null;
-  warehouses: WarehouseHierarchyItem[];
+  branches: BranchTreeItem[];
 }
 
-export interface OrganizationHierarchyItem {
-  id: string;
-  code: string;
-  name: string;
-  is_active: boolean;
-  is_test_data: boolean;
-  branches: BranchHierarchyItem[];
-}
+export type OrganizationHierarchyItem = OrganizationTreeItem;
+export type BranchHierarchyItem = BranchTreeItem;
+export type WarehouseHierarchyItem = Warehouse;
 
 export interface StructureResponse {
-  organizations: OrganizationHierarchyItem[];
+  organizations: OrganizationTreeItem[];
 }
 
 export interface ApiErrorResponse {
@@ -86,36 +83,13 @@ export interface ApiErrorResponse {
   details?: Record<string, unknown>;
 }
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-
-async function handleResponse<T>(res: Response): Promise<T> {
-  if (!res.ok) {
-    let errBody: ApiErrorResponse;
-    try {
-      errBody = await res.json();
-    } catch {
-      errBody = {
-        code: `HTTP_${res.status}`,
-        message: res.statusText || 'Error en la solicitud al servidor',
-      };
-    }
-    throw errBody;
-  }
-  if (res.status === 204) {
-    return {} as T;
-  }
-  return res.json();
-}
-
 export const structureApi = {
   getStructure: async (): Promise<StructureResponse> => {
-    const res = await fetch(`${API_URL}/api/logistics/structure`);
-    return handleResponse<StructureResponse>(res);
+    return apiFetch<StructureResponse>('/api/logistics/structure');
   },
 
   listOrganizations: async (): Promise<Organization[]> => {
-    const res = await fetch(`${API_URL}/api/logistics/organizations`);
-    return handleResponse<Organization[]>(res);
+    return apiFetch<Organization[]>('/api/logistics/organizations');
   },
 
   createOrganization: async (data: {
@@ -124,36 +98,30 @@ export const structureApi = {
     is_active?: boolean;
     is_test_data?: boolean;
   }): Promise<Organization> => {
-    const res = await fetch(`${API_URL}/api/logistics/organizations`, {
+    return apiFetch<Organization>('/api/logistics/organizations', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<Organization>(res);
   },
 
   updateOrganization: async (
     id: string,
     data: { name?: string; is_active?: boolean }
   ): Promise<Organization> => {
-    const res = await fetch(`${API_URL}/api/logistics/organizations/${id}`, {
+    return apiFetch<Organization>(`/api/logistics/organizations/${id}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<Organization>(res);
   },
 
   deleteOrganization: async (id: string): Promise<void> => {
-    const res = await fetch(`${API_URL}/api/logistics/organizations/${id}`, {
+    return apiFetch<void>(`/api/logistics/organizations/${id}`, {
       method: 'DELETE',
     });
-    return handleResponse<void>(res);
   },
 
   listBranches: async (orgId: string): Promise<Branch[]> => {
-    const res = await fetch(`${API_URL}/api/logistics/organizations/${orgId}/branches`);
-    return handleResponse<Branch[]>(res);
+    return apiFetch<Branch[]>(`/api/logistics/organizations/${orgId}/branches`);
   },
 
   createBranch: async (
@@ -166,36 +134,30 @@ export const structureApi = {
       is_test_data?: boolean;
     }
   ): Promise<Branch> => {
-    const res = await fetch(`${API_URL}/api/logistics/organizations/${orgId}/branches`, {
+    return apiFetch<Branch>(`/api/logistics/organizations/${orgId}/branches`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<Branch>(res);
   },
 
   updateBranch: async (
     branchId: string,
     data: { name?: string; is_active?: boolean; location?: OperationalLocation }
   ): Promise<Branch> => {
-    const res = await fetch(`${API_URL}/api/logistics/branches/${branchId}`, {
+    return apiFetch<Branch>(`/api/logistics/branches/${branchId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<Branch>(res);
   },
 
   deleteBranch: async (branchId: string): Promise<void> => {
-    const res = await fetch(`${API_URL}/api/logistics/branches/${branchId}`, {
+    return apiFetch<void>(`/api/logistics/branches/${branchId}`, {
       method: 'DELETE',
     });
-    return handleResponse<void>(res);
   },
 
   listWarehouses: async (branchId: string): Promise<Warehouse[]> => {
-    const res = await fetch(`${API_URL}/api/logistics/branches/${branchId}/warehouses`);
-    return handleResponse<Warehouse[]>(res);
+    return apiFetch<Warehouse[]>(`/api/logistics/branches/${branchId}/warehouses`);
   },
 
   createWarehouse: async (
@@ -209,12 +171,10 @@ export const structureApi = {
       is_test_data?: boolean;
     }
   ): Promise<Warehouse> => {
-    const res = await fetch(`${API_URL}/api/logistics/branches/${branchId}/warehouses`, {
+    return apiFetch<Warehouse>(`/api/logistics/branches/${branchId}/warehouses`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<Warehouse>(res);
   },
 
   updateWarehouse: async (
@@ -226,18 +186,15 @@ export const structureApi = {
       custom_location?: OperationalLocation;
     }
   ): Promise<Warehouse> => {
-    const res = await fetch(`${API_URL}/api/logistics/warehouses/${warehouseId}`, {
+    return apiFetch<Warehouse>(`/api/logistics/warehouses/${warehouseId}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
     });
-    return handleResponse<Warehouse>(res);
   },
 
   deleteWarehouse: async (warehouseId: string): Promise<void> => {
-    const res = await fetch(`${API_URL}/api/logistics/warehouses/${warehouseId}`, {
+    return apiFetch<void>(`/api/logistics/warehouses/${warehouseId}`, {
       method: 'DELETE',
     });
-    return handleResponse<void>(res);
   },
 };

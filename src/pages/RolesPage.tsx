@@ -637,7 +637,7 @@ export const RolesPage: React.FC = () => {
                   </div>
                   {selectedRolePerms.sod_warnings.map((w, idx) => (
                     <div key={idx} style={{ fontSize: '13px', color: '#78350f', marginTop: '4px' }}>
-                      • <strong>{w.role_a} ↔ {w.role_b} ({w.conflict_level}):</strong> {w.reason}
+                      • {typeof w === 'string' ? w : JSON.stringify(w)}
                     </div>
                   ))}
                 </div>

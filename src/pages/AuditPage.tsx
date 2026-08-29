@@ -351,7 +351,7 @@ export const AuditPage: React.FC = () => {
                   <td style={{ padding: '10px 16px' }}>{renderResultBadge(e.result)}</td>
                   <td style={{ padding: '10px 16px', color: '#64748b', fontSize: '12px' }}>{e.reason || '—'}</td>
                   <td style={{ padding: '10px 16px', color: '#64748b', fontSize: '11px', fontFamily: 'monospace' }}>
-                    {e.correlation_id.slice(0, 8)}...
+                    {e.correlation_id ? `${e.correlation_id.slice(0, 8)}...` : '—'}
                   </td>
                   <td style={{ padding: '10px 16px', textAlign: 'center' }}>
                     <button
