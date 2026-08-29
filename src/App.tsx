@@ -10,8 +10,9 @@ import { SystemStatusPage } from "./pages/SystemStatusPage";
 import { DocumentCatalogPage } from "./pages/DocumentCatalogPage";
 import { DocumentNumberingPage } from "./pages/DocumentNumberingPage";
 import DocumentSeriesPage from "./pages/DocumentSeriesPage";
+import DocumentTemplatesPage from "./pages/DocumentTemplatesPage";
 
-type TabType = "structure" | "roles" | "audit" | "users" | "documents" | "numbering" | "series" | "security" | "system";
+type TabType = "structure" | "roles" | "audit" | "users" | "documents" | "numbering" | "series" | "templates" | "security" | "system";
 
 const AppContent: React.FC = () => {
   const { user, roles, isAuthenticated, isLoading, mfaEnabled, logout, hasPermission } = useAuth();
@@ -157,6 +158,24 @@ const AppContent: React.FC = () => {
               }}
             >
               📑 Series & Talonarios
+            </button>
+          )}
+
+          {(hasPermission("document_templates.read") || hasPermission("document_catalog.read")) && (
+            <button
+              onClick={() => setActiveTab("templates")}
+              style={{
+                padding: "8px 12px",
+                fontSize: "13px",
+                fontWeight: 500,
+                backgroundColor: activeTab === "templates" ? "#2563eb" : "transparent",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              🎨 Plantillas & Render
             </button>
           )}
 
@@ -309,6 +328,7 @@ const AppContent: React.FC = () => {
         {activeTab === "documents" && <DocumentCatalogPage />}
         {activeTab === "numbering" && <DocumentNumberingPage />}
         {activeTab === "series" && <DocumentSeriesPage />}
+        {activeTab === "templates" && <DocumentTemplatesPage />}
         {activeTab === "structure" && <StructurePage />}
         {activeTab === "roles" && <RolesPage />}
         {activeTab === "audit" && <AuditPage />}
