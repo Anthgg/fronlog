@@ -7,17 +7,20 @@ import { AuditPage } from "./pages/AuditPage";
 import { UsersPage } from "./pages/UsersPage";
 import { SecurityPage } from "./pages/SecurityPage";
 import { SystemStatusPage } from "./pages/SystemStatusPage";
+import { DocumentCatalogPage } from "./pages/DocumentCatalogPage";
 
-type TabType = "structure" | "roles" | "audit" | "users" | "security" | "system";
+type TabType = "structure" | "roles" | "audit" | "users" | "documents" | "security" | "system";
 
 const AppContent: React.FC = () => {
   const { user, roles, isAuthenticated, isLoading, mfaEnabled, logout, hasPermission } = useAuth();
-  const [activeTab, setActiveTab] = useState<TabType>("structure");
+  const [activeTab, setActiveTab] = useState<TabType>("documents");
 
   // Adjust default active tab based on user permissions
   useEffect(() => {
     if (isAuthenticated) {
-      if (hasPermission("organization.read")) {
+      if (hasPermission("document_catalog.read")) {
+        setActiveTab("documents");
+      } else if (hasPermission("organization.read")) {
         setActiveTab("structure");
       } else if (hasPermission("audit.read")) {
         setActiveTab("audit");
@@ -95,12 +98,30 @@ const AppContent: React.FC = () => {
               fontWeight: 600,
             }}
           >
-            Fase 009
+            Fase 011
           </span>
         </div>
 
         {/* Navigation Tabs */}
         <nav style={{ display: "flex", gap: "6px" }}>
+          {hasPermission("document_catalog.read") && (
+            <button
+              onClick={() => setActiveTab("documents")}
+              style={{
+                padding: "8px 12px",
+                fontSize: "13px",
+                fontWeight: 500,
+                backgroundColor: activeTab === "documents" ? "#2563eb" : "transparent",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              📄 Catálogo Documental
+            </button>
+          )}
+
           {hasPermission("organization.read") && (
             <button
               onClick={() => setActiveTab("structure")}
@@ -246,7 +267,8 @@ const AppContent: React.FC = () => {
       </header>
 
       {/* Main Content Area */}
-      <main style={{ padding: "8px 0" }}>
+      <main style={{ padding: "8px 24px" }}>
+        {activeTab === "documents" && <DocumentCatalogPage />}
         {activeTab === "structure" && <StructurePage />}
         {activeTab === "roles" && <RolesPage />}
         {activeTab === "audit" && <AuditPage />}

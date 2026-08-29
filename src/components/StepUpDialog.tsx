@@ -13,7 +13,7 @@ export interface StepUpChallengeInfo {
 interface StepUpDialogProps {
   isOpen: boolean;
   challenge: StepUpChallengeInfo | null;
-  onSuccess: () => void;
+  onSuccess: (grantId?: string) => void;
   onCancel: () => void;
 }
 
@@ -41,9 +41,9 @@ export const StepUpDialog: React.FC<StepUpDialogProps> = ({
     setErrorMsg(null);
 
     try {
-      await mfaApi.verifyStepUp(challenge.challengeId, method, code.trim());
+      const verifyRes = await mfaApi.verifyStepUp(challenge.challengeId, method, code.trim());
       setCode("");
-      onSuccess();
+      onSuccess(verifyRes.grant_id);
     } catch (err: unknown) {
       if (err instanceof ApiError) {
         if (err.code === "TOTP_REPLAY_DETECTED") {
