@@ -9,8 +9,9 @@ import { SecurityPage } from "./pages/SecurityPage";
 import { SystemStatusPage } from "./pages/SystemStatusPage";
 import { DocumentCatalogPage } from "./pages/DocumentCatalogPage";
 import { DocumentNumberingPage } from "./pages/DocumentNumberingPage";
+import DocumentSeriesPage from "./pages/DocumentSeriesPage";
 
-type TabType = "structure" | "roles" | "audit" | "users" | "documents" | "numbering" | "security" | "system";
+type TabType = "structure" | "roles" | "audit" | "users" | "documents" | "numbering" | "series" | "security" | "system";
 
 const AppContent: React.FC = () => {
   const { user, roles, isAuthenticated, isLoading, mfaEnabled, logout, hasPermission } = useAuth();
@@ -99,7 +100,7 @@ const AppContent: React.FC = () => {
               fontWeight: 600,
             }}
           >
-            Fase 012
+            Fase 013
           </span>
         </div>
 
@@ -138,6 +139,24 @@ const AppContent: React.FC = () => {
               }}
             >
               🔢 Numeración
+            </button>
+          )}
+
+          {(hasPermission("document_series.read") || hasPermission("document_catalog.read")) && (
+            <button
+              onClick={() => setActiveTab("series")}
+              style={{
+                padding: "8px 12px",
+                fontSize: "13px",
+                fontWeight: 500,
+                backgroundColor: activeTab === "series" ? "#2563eb" : "transparent",
+                color: "#ffffff",
+                border: "none",
+                borderRadius: "6px",
+                cursor: "pointer",
+              }}
+            >
+              📑 Series & Talonarios
             </button>
           )}
 
@@ -289,6 +308,7 @@ const AppContent: React.FC = () => {
       <main style={{ padding: "8px 24px" }}>
         {activeTab === "documents" && <DocumentCatalogPage />}
         {activeTab === "numbering" && <DocumentNumberingPage />}
+        {activeTab === "series" && <DocumentSeriesPage />}
         {activeTab === "structure" && <StructurePage />}
         {activeTab === "roles" && <RolesPage />}
         {activeTab === "audit" && <AuditPage />}
