@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
 import { AuthUser, authApi } from "../api/auth";
+import { mfaApi } from "../api/mfa";
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -8,11 +9,13 @@ interface AuthContextType {
   organizationId: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  mfaEnabled: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   hasPermission: (permissionCode: string) => boolean;
   hasAnyPermission: (permissionCodes: string[]) => boolean;
   refreshMe: () => Promise<void>;
+  refreshMfaStatus: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,6 +25,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [roles, setRoles] = useState<string[]>([]);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [organizationId, setOrganizationId] = useState<string | null>(null);
+  const [mfaEnabled, setMfaEnabled] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   const bootstrapSession = useCallback(async () => {
@@ -39,12 +43,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRoles(meData.roles || []);
       setPermissions(meData.permissions || []);
       setOrganizationId(meData.organization_id || null);
+      setMfaEnabled(!!meData.mfa_enabled);
     } catch {
       // 401 or network error -> clear state
       setUser(null);
       setRoles([]);
       setPermissions([]);
       setOrganizationId(null);
+      setMfaEnabled(false);
     } finally {
       setIsLoading(false);
     }
@@ -63,6 +69,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRoles(res.roles || []);
       setPermissions(res.permissions || []);
       setOrganizationId(res.organization_id || null);
+      setMfaEnabled(!!res.mfa_enabled);
     } finally {
       setIsLoading(false);
     }
@@ -79,6 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setRoles([]);
       setPermissions([]);
       setOrganizationId(null);
+      setMfaEnabled(false);
       setIsLoading(false);
     }
   };
@@ -103,6 +111,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await bootstrapSession();
   };
 
+  const refreshMfaStatus = async (): Promise<void> => {
+    try {
+      const status = await mfaApi.getStatus();
+      setMfaEnabled(status.enabled);
+    } catch {
+      // Ignore error
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -112,11 +129,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         organizationId,
         isAuthenticated: !!user,
         isLoading,
+        mfaEnabled,
         login,
         logout,
         hasPermission,
         hasAnyPermission,
         refreshMe,
+        refreshMfaStatus,
       }}
     >
       {children}

@@ -37,7 +37,6 @@ export const LoginPage: React.FC = () => {
 
   const handleQuickFill = (demoEmail: string) => {
     setEmail(demoEmail);
-    setPassword("DemoLogistics2026!Secure");
     setErrorMsg(null);
   };
 

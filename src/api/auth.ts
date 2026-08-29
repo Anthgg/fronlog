@@ -17,6 +17,7 @@ export interface AuthMeResponse {
   organization_id: string;
   roles: string[];
   permissions: string[];
+  mfa_enabled?: boolean;
 }
 
 export interface UserCreateInput {

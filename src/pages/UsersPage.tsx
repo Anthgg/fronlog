@@ -3,6 +3,7 @@ import { AuthUser, authApi, UserCreateInput } from "../api/auth";
 import { useAuth } from "../context/AuthContext";
 import { RoleResponse, rolesApi } from "../api/roles";
 import { ApiError } from "../api/client";
+import { StepUpDialog, StepUpChallengeInfo } from "../components/StepUpDialog";
 
 export const UsersPage: React.FC = () => {
   const { hasPermission, organizationId } = useAuth();
@@ -11,6 +12,10 @@ export const UsersPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Step-Up Dialog State
+  const [stepUpChallenge, setStepUpChallenge] = useState<StepUpChallengeInfo | null>(null);
+  const [pendingAction, setPendingAction] = useState<(() => Promise<void>) | null>(null);
 
   // Modal states
   const [showCreateModal, setShowCreateModal] = useState<boolean>(false);
@@ -38,7 +43,7 @@ export const UsersPage: React.FC = () => {
       if (err instanceof ApiError) {
         setErrorMsg(err.message);
       } else {
-        setErrorMsg("Error al cargar datos de usuarios.");
+        setErrorMsg("Error de conexión al cargar usuarios.");
       }
     } finally {
       setLoading(false);
@@ -49,8 +54,8 @@ export const UsersPage: React.FC = () => {
     loadData();
   }, [loadData]);
 
-  const handleCreateUser = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateUser = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!organizationId) {
       setErrorMsg("No se detectó la organización activa.");
       return;
@@ -75,6 +80,16 @@ export const UsersPage: React.FC = () => {
       setSelectedRoleCodes([]);
       await loadData();
     } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 428 && err.code === "STEP_UP_REQUIRED" && err.details) {
+        setStepUpChallenge({
+          challengeId: String(err.details.challenge_id),
+          policy: String(err.details.policy),
+          reason: String(err.details.reason),
+          expiresAt: String(err.details.expires_at),
+        });
+        setPendingAction(() => () => handleCreateUser());
+        return;
+      }
       if (err instanceof ApiError) {
         setErrorMsg(err.message);
       } else {
@@ -94,6 +109,16 @@ export const UsersPage: React.FC = () => {
       setSuccessMsg(`Usuario ${user.email} desactivado.`);
       await loadData();
     } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 428 && err.code === "STEP_UP_REQUIRED" && err.details) {
+        setStepUpChallenge({
+          challengeId: String(err.details.challenge_id),
+          policy: String(err.details.policy),
+          reason: String(err.details.reason),
+          expiresAt: String(err.details.expires_at),
+        });
+        setPendingAction(() => () => handleDisableUser(user));
+        return;
+      }
       if (err instanceof ApiError) {
         setErrorMsg(err.message);
       } else {
@@ -121,6 +146,16 @@ export const UsersPage: React.FC = () => {
       setSelectedUser(null);
       await loadData();
     } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 428 && err.code === "STEP_UP_REQUIRED" && err.details) {
+        setStepUpChallenge({
+          challengeId: String(err.details.challenge_id),
+          policy: String(err.details.policy),
+          reason: String(err.details.reason),
+          expiresAt: String(err.details.expires_at),
+        });
+        setPendingAction(() => () => handleSaveUserRoles());
+        return;
+      }
       if (err instanceof ApiError) {
         setErrorMsg(err.message);
       } else {
@@ -140,88 +175,129 @@ export const UsersPage: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: "1.5rem" }}>
-      {/* Title & Action Bar */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem" }}>
+      {/* Header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2rem" }}>
         <div>
-          <h1 style={{ fontSize: "1.5rem", fontWeight: 700, color: "#0f172a", margin: 0 }}>
-            Administración de Usuarios
+          <h1 style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc", margin: "0 0 0.5rem 0" }}>
+            Administración de Usuarios e Identidad Real
           </h1>
-          <p style={{ fontSize: "0.875rem", color: "#64748b", margin: "0.25rem 0 0 0" }}>
-            Gestión centralizada de identidades, roles asignados y estado de cuenta
+          <p style={{ color: "#94a3b8", fontSize: "0.95rem", margin: 0 }}>
+            Gestión de identidades con asignación de roles RBAC y control de acceso seguro.
           </p>
         </div>
-
         {hasPermission("users.create") && (
           <button
             onClick={() => setShowCreateModal(true)}
             style={{
-              display: "inline-flex",
-              alignItems: "center",
-              padding: "0.5rem 1rem",
+              padding: "0.625rem 1.25rem",
+              borderRadius: "0.5rem",
+              border: "none",
               backgroundColor: "#2563eb",
               color: "#ffffff",
-              border: "none",
-              borderRadius: "0.375rem",
-              fontSize: "0.875rem",
               fontWeight: 600,
               cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
             }}
           >
-            + Crear Usuario
+            <span>➕</span> Nuevo Usuario
           </button>
         )}
       </div>
 
-      {/* Messages */}
       {errorMsg && (
-        <div style={{ padding: "0.75rem", backgroundColor: "#fee2e2", border: "1px solid #f87171", borderRadius: "0.375rem", color: "#b91c1c", fontSize: "0.875rem", marginBottom: "1rem" }}>
+        <div
+          style={{
+            backgroundColor: "rgba(239, 68, 68, 0.15)",
+            border: "1px solid #ef4444",
+            color: "#fca5a5",
+            padding: "1rem",
+            borderRadius: "0.5rem",
+            marginBottom: "1.5rem",
+          }}
+        >
           {errorMsg}
         </div>
       )}
+
       {successMsg && (
-        <div style={{ padding: "0.75rem", backgroundColor: "#dcfce7", border: "1px solid #4ade80", borderRadius: "0.375rem", color: "#15803d", fontSize: "0.875rem", marginBottom: "1rem" }}>
+        <div
+          style={{
+            backgroundColor: "rgba(34, 197, 94, 0.15)",
+            border: "1px solid #22c55e",
+            color: "#86efac",
+            padding: "1rem",
+            borderRadius: "0.5rem",
+            marginBottom: "1.5rem",
+          }}
+        >
           {successMsg}
         </div>
       )}
 
-      {/* Table */}
-      <div style={{ backgroundColor: "#ffffff", borderRadius: "0.5rem", border: "1px solid #e2e8f0", overflow: "hidden", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-        {loading ? (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>Cargando usuarios...</div>
-        ) : users.length === 0 ? (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>No se encontraron usuarios en la organización.</div>
-        ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left", fontSize: "0.875rem" }}>
-            <thead>
-              <tr style={{ backgroundColor: "#f8fafc", borderBottom: "1px solid #e2e8f0", color: "#475569" }}>
-                <th style={{ padding: "0.75rem 1rem" }}>Usuario</th>
-                <th style={{ padding: "0.75rem 1rem" }}>Roles Asignados</th>
-                <th style={{ padding: "0.75rem 1rem" }}>Estado</th>
-                <th style={{ padding: "0.75rem 1rem" }}>Último Acceso</th>
-                <th style={{ padding: "0.75rem 1rem", textAlign: "right" }}>Acciones</th>
+      {/* Users Table */}
+      <div
+        style={{
+          backgroundColor: "#1e293b",
+          border: "1px solid #334155",
+          borderRadius: "0.75rem",
+          overflow: "hidden",
+        }}
+      >
+        <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <thead>
+            <tr style={{ backgroundColor: "#0f172a", borderBottom: "1px solid #334155", color: "#94a3b8", fontSize: "0.85rem" }}>
+              <th style={{ padding: "1rem" }}>USUARIO</th>
+              <th style={{ padding: "1rem" }}>EMAIL</th>
+              <th style={{ padding: "1rem" }}>ROLES ASIGNADOS</th>
+              <th style={{ padding: "1rem" }}>ESTADO</th>
+              <th style={{ padding: "1rem", textAlign: "right" }}>ACCIONES</th>
+            </tr>
+          </thead>
+          <tbody>
+            {loading ? (
+              <tr>
+                <td colSpan={5} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>
+                  Cargando usuarios...
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} style={{ borderBottom: "1px solid #f1f5f9" }}>
-                  <td style={{ padding: "0.75rem 1rem" }}>
-                    <div style={{ fontWeight: 600, color: "#1e293b" }}>{u.display_name}</div>
-                    <div style={{ color: "#64748b", fontSize: "0.75rem" }}>{u.email}</div>
+            ) : users.length === 0 ? (
+              <tr>
+                <td colSpan={5} style={{ padding: "2rem", textAlign: "center", color: "#94a3b8" }}>
+                  No se encontraron usuarios en la organización.
+                </td>
+              </tr>
+            ) : (
+              users.map((u) => (
+                <tr
+                  key={u.id}
+                  style={{
+                    borderBottom: "1px solid #334155",
+                    color: "#f8fafc",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  <td style={{ padding: "1rem", fontWeight: 600 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                      <span>👤</span>
+                      <span>{u.display_name}</span>
+                    </div>
                   </td>
-                  <td style={{ padding: "0.75rem 1rem" }}>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "0.25rem" }}>
+                  <td style={{ padding: "1rem", color: "#cbd5e1" }}>{u.email}</td>
+                  <td style={{ padding: "1rem" }}>
+                    <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
                       {u.roles && u.roles.length > 0 ? (
                         u.roles.map((r) => (
                           <span
                             key={r}
                             style={{
-                              display: "inline-block",
-                              padding: "0.125rem 0.5rem",
-                              backgroundColor: "#e0f2fe",
-                              color: "#0369a1",
-                              borderRadius: "9999px",
-                              fontSize: "0.6875rem",
+                              padding: "0.2rem 0.5rem",
+                              borderRadius: "0.25rem",
+                              backgroundColor: "#334155",
+                              color: "#38bdf8",
+                              fontSize: "0.75rem",
                               fontWeight: 600,
                             }}
                           >
@@ -229,58 +305,53 @@ export const UsersPage: React.FC = () => {
                           </span>
                         ))
                       ) : (
-                        <span style={{ color: "#94a3b8", fontSize: "0.75rem" }}>Sin roles</span>
+                        <span style={{ color: "#64748b", fontSize: "0.8rem" }}>Sin roles</span>
                       )}
                     </div>
                   </td>
-                  <td style={{ padding: "0.75rem 1rem" }}>
+                  <td style={{ padding: "1rem" }}>
                     <span
                       style={{
-                        display: "inline-block",
-                        padding: "0.125rem 0.5rem",
+                        padding: "0.25rem 0.5rem",
                         borderRadius: "9999px",
                         fontSize: "0.75rem",
                         fontWeight: 600,
-                        backgroundColor: u.is_active ? "#dcfce7" : "#fee2e2",
-                        color: u.is_active ? "#15803d" : "#b91c1c",
+                        backgroundColor: u.is_active ? "rgba(34, 197, 94, 0.2)" : "rgba(239, 68, 68, 0.2)",
+                        color: u.is_active ? "#4ade80" : "#f87171",
+                        border: `1px solid ${u.is_active ? "#22c55e" : "#ef4444"}`,
                       }}
                     >
-                      {u.is_active ? "Activo" : "Inactivo"}
+                      {u.is_active ? "ACTIVO" : "INACTIVO"}
                     </span>
                   </td>
-                  <td style={{ padding: "0.75rem 1rem", color: "#64748b", fontSize: "0.8125rem" }}>
-                    {u.last_login_at ? new Date(u.last_login_at).toLocaleString() : "Nunca"}
-                  </td>
-                  <td style={{ padding: "0.75rem 1rem", textAlign: "right" }}>
-                    <div style={{ display: "inline-flex", gap: "0.5rem" }}>
-                      {hasPermission("users.roles.assign") && u.is_active && (
+                  <td style={{ padding: "1rem", textAlign: "right" }}>
+                    <div style={{ display: "flex", gap: "0.5rem", justifyContent: "flex-end" }}>
+                      {hasPermission("users.roles.assign") && (
                         <button
                           onClick={() => handleOpenRolesModal(u)}
                           style={{
-                            padding: "0.25rem 0.625rem",
-                            backgroundColor: "#f1f5f9",
-                            border: "1px solid #cbd5e1",
-                            borderRadius: "0.25rem",
-                            fontSize: "0.75rem",
-                            fontWeight: 500,
-                            color: "#334155",
+                            padding: "0.35rem 0.75rem",
+                            borderRadius: "0.375rem",
+                            border: "1px solid #475569",
+                            backgroundColor: "#334155",
+                            color: "#f8fafc",
+                            fontSize: "0.8rem",
                             cursor: "pointer",
                           }}
                         >
-                          Roles
+                          Asignar Roles
                         </button>
                       )}
                       {hasPermission("users.disable") && u.is_active && (
                         <button
                           onClick={() => handleDisableUser(u)}
                           style={{
-                            padding: "0.25rem 0.625rem",
-                            backgroundColor: "#fee2e2",
-                            border: "1px solid #fca5a5",
-                            borderRadius: "0.25rem",
-                            fontSize: "0.75rem",
-                            fontWeight: 500,
-                            color: "#b91c1c",
+                            padding: "0.35rem 0.75rem",
+                            borderRadius: "0.375rem",
+                            border: "1px solid #ef4444",
+                            backgroundColor: "transparent",
+                            color: "#fca5a5",
+                            fontSize: "0.8rem",
                             cursor: "pointer",
                           }}
                         >
@@ -290,82 +361,169 @@ export const UsersPage: React.FC = () => {
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
 
-      {/* Modal: Create User */}
+      {/* Create User Modal */}
       {showCreateModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#ffffff", borderRadius: "0.5rem", width: "100%", maxWidth: "480px", padding: "1.5rem", boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 700, margin: "0 0 1rem 0", color: "#0f172a" }}>Crear Nuevo Usuario</h2>
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.8)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#1e293b",
+              border: "1px solid #334155",
+              borderRadius: "1rem",
+              maxWidth: "500px",
+              width: "100%",
+              padding: "2rem",
+              color: "#f8fafc",
+            }}
+          >
             <form onSubmit={handleCreateUser}>
-              <div style={{ marginBottom: "0.75rem" }}>
-                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#475569", marginBottom: "0.25rem" }}>Nombre Completo</label>
+              <h3 style={{ margin: "0 0 1rem 0", fontSize: "1.25rem" }}>Crear Nuevo Usuario</h3>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.35rem" }}>
+                  Nombre Completo
+                </label>
                 <input
                   type="text"
+                  required
                   value={newDisplayName}
                   onChange={(e) => setNewDisplayName(e.target.value)}
-                  required
-                  placeholder="Ej: Juan Pérez"
-                  style={{ width: "100%", padding: "0.5rem", border: "1px solid #cbd5e1", borderRadius: "0.375rem", fontSize: "0.875rem", boxSizing: "border-box" }}
+                  placeholder="Ej. Juan Pérez"
+                  style={{
+                    width: "100%",
+                    padding: "0.625rem 0.875rem",
+                    borderRadius: "0.375rem",
+                    border: "1px solid #475569",
+                    backgroundColor: "#0f172a",
+                    color: "#f8fafc",
+                    boxSizing: "border-box",
+                  }}
                 />
               </div>
-              <div style={{ marginBottom: "0.75rem" }}>
-                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#475569", marginBottom: "0.25rem" }}>Correo Electrónico</label>
+
+              <div style={{ marginBottom: "1rem" }}>
+                <label style={{ display: "block", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.35rem" }}>
+                  Correo Electrónico
+                </label>
                 <input
-                  type="text"
+                  type="email"
+                  required
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
-                  required
                   placeholder="usuario@logistica.local"
-                  style={{ width: "100%", padding: "0.5rem", border: "1px solid #cbd5e1", borderRadius: "0.375rem", fontSize: "0.875rem", boxSizing: "border-box" }}
+                  style={{
+                    width: "100%",
+                    padding: "0.625rem 0.875rem",
+                    borderRadius: "0.375rem",
+                    border: "1px solid #475569",
+                    backgroundColor: "#0f172a",
+                    color: "#f8fafc",
+                    boxSizing: "border-box",
+                  }}
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#475569", marginBottom: "0.25rem" }}>Contraseña Inicial (Mínimo 12 caracteres)</label>
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <label style={{ display: "block", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.35rem" }}>
+                  Contraseña Inicial (mínimo 12 caracteres)
+                </label>
                 <input
                   type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
                   required
                   minLength={12}
-                  placeholder="••••••••••••"
-                  style={{ width: "100%", padding: "0.5rem", border: "1px solid #cbd5e1", borderRadius: "0.375rem", fontSize: "0.875rem", boxSizing: "border-box" }}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Contraseña robusta"
+                  style={{
+                    width: "100%",
+                    padding: "0.625rem 0.875rem",
+                    borderRadius: "0.375rem",
+                    border: "1px solid #475569",
+                    backgroundColor: "#0f172a",
+                    color: "#f8fafc",
+                    boxSizing: "border-box",
+                  }}
                 />
               </div>
-              <div style={{ marginBottom: "1rem" }}>
-                <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#475569", marginBottom: "0.375rem" }}>Roles Iniciales</label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.375rem", maxHeight: "140px", overflowY: "auto", border: "1px solid #e2e8f0", padding: "0.5rem", borderRadius: "0.375rem" }}>
-                  {availableRoles.map((r) => (
-                    <label key={r.id} style={{ display: "flex", alignItems: "center", fontSize: "0.75rem", color: "#334155", cursor: "pointer" }}>
-                      <input
-                        type="checkbox"
-                        checked={selectedRoleCodes.includes(r.code)}
-                        onChange={() => toggleRoleSelection(r.code)}
-                        style={{ marginRight: "0.375rem" }}
-                      />
-                      {r.code}
-                    </label>
-                  ))}
+
+              <div style={{ marginBottom: "1.5rem" }}>
+                <label style={{ display: "block", fontSize: "0.85rem", color: "#cbd5e1", marginBottom: "0.5rem" }}>
+                  Asignar Roles Iniciales:
+                </label>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {availableRoles.map((r) => {
+                    const isSelected = selectedRoleCodes.includes(r.code);
+                    return (
+                      <button
+                        key={r.id}
+                        type="button"
+                        onClick={() => toggleRoleSelection(r.code)}
+                        style={{
+                          padding: "0.35rem 0.75rem",
+                          borderRadius: "0.375rem",
+                          border: isSelected ? "1px solid #3b82f6" : "1px solid #475569",
+                          backgroundColor: isSelected ? "#2563eb" : "#0f172a",
+                          color: isSelected ? "#ffffff" : "#94a3b8",
+                          fontSize: "0.8rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        {r.name} ({r.code})
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
                 <button
                   type="button"
                   onClick={() => setShowCreateModal(false)}
-                  style={{ padding: "0.5rem 0.875rem", backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "0.375rem", fontSize: "0.875rem", cursor: "pointer" }}
+                  style={{
+                    padding: "0.5rem 1rem",
+                    borderRadius: "0.375rem",
+                    border: "1px solid #475569",
+                    backgroundColor: "transparent",
+                    color: "#cbd5e1",
+                    cursor: "pointer",
+                  }}
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  style={{ padding: "0.5rem 0.875rem", backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "0.375rem", fontSize: "0.875rem", fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer" }}
+                  style={{
+                    padding: "0.5rem 1.25rem",
+                    borderRadius: "0.375rem",
+                    border: "none",
+                    backgroundColor: "#2563eb",
+                    color: "#ffffff",
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    fontWeight: 600,
+                  }}
                 >
-                  {submitting ? "Guardando..." : "Crear Usuario"}
+                  {submitting ? "Creando..." : "Crear Usuario"}
                 </button>
               </div>
             </form>
@@ -373,40 +531,105 @@ export const UsersPage: React.FC = () => {
         </div>
       )}
 
-      {/* Modal: Assign Roles */}
+      {/* Assign Roles Modal */}
       {showRolesModal && selectedUser && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#ffffff", borderRadius: "0.5rem", width: "100%", maxWidth: "420px", padding: "1.5rem", boxShadow: "0 10px 25px rgba(0,0,0,0.2)" }}>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "#0f172a" }}>Asignar Roles</h2>
-            <p style={{ fontSize: "0.8125rem", color: "#64748b", marginBottom: "1rem" }}>
-              {selectedUser.display_name} ({selectedUser.email})
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(15, 23, 42, 0.8)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            zIndex: 9999,
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              backgroundColor: "#1e293b",
+              border: "1px solid #334155",
+              borderRadius: "1rem",
+              maxWidth: "500px",
+              width: "100%",
+              padding: "2rem",
+              color: "#f8fafc",
+            }}
+          >
+            <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.25rem" }}>
+              Asignar Roles a {selectedUser.display_name}
+            </h3>
+            <p style={{ color: "#94a3b8", fontSize: "0.85rem", marginBottom: "1.5rem" }}>
+              Email: {selectedUser.email}
             </p>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem", maxHeight: "200px", overflowY: "auto", border: "1px solid #e2e8f0", padding: "0.5rem", borderRadius: "0.375rem", marginBottom: "1rem" }}>
-              {availableRoles.map((r) => (
-                <label key={r.id} style={{ display: "flex", alignItems: "center", fontSize: "0.75rem", color: "#334155", cursor: "pointer" }}>
-                  <input
-                    type="checkbox"
-                    checked={selectedRoleCodes.includes(r.code)}
-                    onChange={() => toggleRoleSelection(r.code)}
-                    style={{ marginRight: "0.375rem" }}
-                  />
-                  {r.code}
-                </label>
-              ))}
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.5rem" }}>
+              {availableRoles.map((r) => {
+                const isSelected = selectedRoleCodes.includes(r.code);
+                return (
+                  <label
+                    key={r.id}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "0.75rem",
+                      padding: "0.5rem 0.75rem",
+                      borderRadius: "0.375rem",
+                      backgroundColor: isSelected ? "rgba(37, 99, 235, 0.15)" : "#0f172a",
+                      border: isSelected ? "1px solid #2563eb" : "1px solid #334155",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleRoleSelection(r.code)}
+                    />
+                    <div>
+                      <span style={{ fontSize: "0.9rem", fontWeight: 600, color: "#f8fafc" }}>
+                        {r.name}
+                      </span>
+                      <span style={{ fontSize: "0.75rem", color: "#94a3b8", marginLeft: "0.5rem" }}>
+                        ({r.code})
+                      </span>
+                    </div>
+                  </label>
+                );
+              })}
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.5rem" }}>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
               <button
                 type="button"
-                onClick={() => { setShowRolesModal(false); setSelectedUser(null); }}
-                style={{ padding: "0.5rem 0.875rem", backgroundColor: "#f1f5f9", border: "1px solid #cbd5e1", borderRadius: "0.375rem", fontSize: "0.875rem", cursor: "pointer" }}
+                onClick={() => setShowRolesModal(false)}
+                style={{
+                  padding: "0.5rem 1rem",
+                  borderRadius: "0.375rem",
+                  border: "1px solid #475569",
+                  backgroundColor: "transparent",
+                  color: "#cbd5e1",
+                  cursor: "pointer",
+                }}
               >
                 Cancelar
               </button>
               <button
                 type="button"
-                disabled={submitting}
                 onClick={handleSaveUserRoles}
-                style={{ padding: "0.5rem 0.875rem", backgroundColor: "#2563eb", color: "#ffffff", border: "none", borderRadius: "0.375rem", fontSize: "0.875rem", fontWeight: 600, cursor: submitting ? "not-allowed" : "pointer" }}
+                disabled={submitting}
+                style={{
+                  padding: "0.5rem 1.25rem",
+                  borderRadius: "0.375rem",
+                  border: "none",
+                  backgroundColor: "#2563eb",
+                  color: "#ffffff",
+                  cursor: submitting ? "not-allowed" : "pointer",
+                  fontWeight: 600,
+                }}
               >
                 {submitting ? "Guardando..." : "Guardar Roles"}
               </button>
@@ -414,6 +637,23 @@ export const UsersPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Step-Up Dialog */}
+      <StepUpDialog
+        isOpen={!!stepUpChallenge}
+        challenge={stepUpChallenge}
+        onSuccess={async () => {
+          setStepUpChallenge(null);
+          if (pendingAction) {
+            await pendingAction();
+            setPendingAction(null);
+          }
+        }}
+        onCancel={() => {
+          setStepUpChallenge(null);
+          setPendingAction(null);
+        }}
+      />
     </div>
   );
 };

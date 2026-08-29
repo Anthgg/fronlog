@@ -5,12 +5,13 @@ import { StructurePage } from "./pages/StructurePage";
 import { RolesPage } from "./pages/RolesPage";
 import { AuditPage } from "./pages/AuditPage";
 import { UsersPage } from "./pages/UsersPage";
+import { SecurityPage } from "./pages/SecurityPage";
 import { SystemStatusPage } from "./pages/SystemStatusPage";
 
-type TabType = "structure" | "roles" | "audit" | "users" | "system";
+type TabType = "structure" | "roles" | "audit" | "users" | "security" | "system";
 
 const AppContent: React.FC = () => {
-  const { user, roles, isAuthenticated, isLoading, logout, hasPermission } = useAuth();
+  const { user, roles, isAuthenticated, isLoading, mfaEnabled, logout, hasPermission } = useAuth();
   const [activeTab, setActiveTab] = useState<TabType>("structure");
 
   // Adjust default active tab based on user permissions
@@ -25,7 +26,7 @@ const AppContent: React.FC = () => {
       } else if (hasPermission("users.read")) {
         setActiveTab("users");
       } else {
-        setActiveTab("system");
+        setActiveTab("security");
       }
     }
   }, [isAuthenticated, hasPermission]);
@@ -59,8 +60,9 @@ const AppContent: React.FC = () => {
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#f8fafc",
+        backgroundColor: "#0f172a",
         fontFamily: "system-ui, -apple-system, sans-serif",
+        color: "#f8fafc",
       }}
     >
       {/* Top Navigation Bar */}
@@ -86,13 +88,14 @@ const AppContent: React.FC = () => {
             style={{
               fontSize: "11px",
               backgroundColor: "#1e293b",
-              color: "#94a3b8",
+              color: "#38bdf8",
               padding: "2px 8px",
               borderRadius: "12px",
-              border: "1px solid #334155",
+              border: "1px solid #0284c7",
+              fontWeight: 600,
             }}
           >
-            Fase 008
+            Fase 009
           </span>
         </div>
 
@@ -171,6 +174,33 @@ const AppContent: React.FC = () => {
           )}
 
           <button
+            onClick={() => setActiveTab("security")}
+            style={{
+              padding: "8px 12px",
+              fontSize: "13px",
+              fontWeight: 500,
+              backgroundColor: activeTab === "security" ? "#2563eb" : "transparent",
+              color: "#ffffff",
+              border: "none",
+              borderRadius: "6px",
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            <span>🔒 Seguridad</span>
+            <span
+              style={{
+                width: "8px",
+                height: "8px",
+                borderRadius: "50%",
+                backgroundColor: mfaEnabled ? "#22c55e" : "#eab308",
+              }}
+            />
+          </button>
+
+          <button
             onClick={() => setActiveTab("system")}
             style={{
               padding: "8px 12px",
@@ -183,7 +213,7 @@ const AppContent: React.FC = () => {
               cursor: "pointer",
             }}
           >
-            ⚙️ Estado del Sistema
+            ⚙️ Estado
           </button>
         </nav>
 
@@ -221,6 +251,7 @@ const AppContent: React.FC = () => {
         {activeTab === "roles" && <RolesPage />}
         {activeTab === "audit" && <AuditPage />}
         {activeTab === "users" && <UsersPage />}
+        {activeTab === "security" && <SecurityPage />}
         {activeTab === "system" && <SystemStatusPage />}
       </main>
     </div>
