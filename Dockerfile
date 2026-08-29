@@ -17,16 +17,14 @@ RUN npm run build
 # Production Stage
 FROM nginx:alpine-slim
 
-ENV PORT=8080
-
-# Remove default nginx static assets
-RUN rm -rf /usr/share/nginx/html/*
+# Remove default nginx static assets and configs
+RUN rm -rf /usr/share/nginx/html/* /etc/nginx/conf.d/*
 
 # Copy build artifacts from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx template configuration for dynamic PORT substitution
-COPY nginx.conf /etc/nginx/templates/default.conf.template
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 8080
 

@@ -1,0 +1,17 @@
+steps:
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '--build-arg'
+      - 'VITE_API_URL=$_VITE_API_URL'
+      - '-t'
+      - 'southamerica-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fronlog-web:$_COMMIT_SHA'
+      - '-t'
+      - 'southamerica-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fronlog-web:latest'
+      - '.'
+images:
+  - 'southamerica-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fronlog-web:$_COMMIT_SHA'
+  - 'southamerica-west1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/fronlog-web:latest'
+substitutions:
+  _VITE_API_URL: 'https://logba-api-303244958634.southamerica-west1.run.app'
+  _COMMIT_SHA: '4acd9ea'
