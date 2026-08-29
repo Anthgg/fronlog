@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { SystemStatusPage } from './pages/SystemStatusPage';
 import { StructurePage } from './pages/StructurePage';
 import { RolesPage } from './pages/RolesPage';
+import { AuditPage } from './pages/AuditPage';
 
 export const App: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'system' | 'structure' | 'roles'>('structure');
+  const [activeTab, setActiveTab] = useState<'system' | 'structure' | 'roles' | 'audit'>('structure');
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -36,7 +37,7 @@ export const App: React.FC = () => {
               border: '1px solid #334155',
             }}
           >
-            Fase 005
+            Fase 007
           </span>
         </div>
 
@@ -74,6 +75,22 @@ export const App: React.FC = () => {
             🛡️ Roles & RBAC
           </button>
           <button
+            onClick={() => setActiveTab('audit')}
+            style={{
+              padding: '8px 14px',
+              fontSize: '13px',
+              fontWeight: 500,
+              backgroundColor: activeTab === 'audit' ? '#2563eb' : 'transparent',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+              transition: 'background-color 0.15s',
+            }}
+          >
+            📜 Auditoría
+          </button>
+          <button
             onClick={() => setActiveTab('system')}
             style={{
               padding: '8px 14px',
@@ -96,6 +113,7 @@ export const App: React.FC = () => {
       <main style={{ padding: '8px 0' }}>
         {activeTab === 'structure' && <StructurePage />}
         {activeTab === 'roles' && <RolesPage />}
+        {activeTab === 'audit' && <AuditPage />}
         {activeTab === 'system' && <SystemStatusPage />}
       </main>
     </div>
