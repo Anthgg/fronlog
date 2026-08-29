@@ -9,7 +9,7 @@ RUN npm ci
 COPY . .
 
 # Build argument for backend API URL injected during CI/CD
-ARG VITE_API_URL
+ARG VITE_API_URL=https://logba-api-303244958634.southamerica-west1.run.app
 ENV VITE_API_URL=${VITE_API_URL}
 
 RUN npm run build

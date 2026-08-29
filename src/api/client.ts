@@ -25,7 +25,10 @@ export class ApiError extends Error {
 }
 
 export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_URL ||
+  (typeof window !== "undefined" && window.location.hostname.includes("run.app")
+    ? "https://logba-api-303244958634.southamerica-west1.run.app"
+    : "http://localhost:8000");
 
 let cachedCsrfToken: string | null = null;
 
