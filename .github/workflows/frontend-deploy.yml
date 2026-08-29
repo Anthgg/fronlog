@@ -1,0 +1,54 @@
+name: Frontend Deploy to Cloud Run
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/**'
+      - 'public/**'
+      - 'Dockerfile'
+      - 'nginx.conf'
+      - 'package*.json'
+      - 'vite.config.ts'
+
+concurrency:
+  group: frontend-deploy-production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Build and Deploy Frontend to Cloud Run
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Authorize Docker push
+        run: gcloud auth configure-docker southamerica-west1-docker.pkg.dev
+
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_TAG="southamerica-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/fronlog-web:${{ github.sha }}"
+          docker build \
+            --build-arg VITE_API_URL="${{ secrets.PRODUCTION_BACKEND_URL }}" \
+            -t "$IMAGE_TAG" \
+            -t "southamerica-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/fronlog-web:latest" .
+          docker push "$IMAGE_TAG"
+          docker push "southamerica-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/fronlog-web:latest"
+
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run deploy fronlog-web \
+            --image "southamerica-west1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/cloud-run-source-deploy/fronlog-web:${{ github.sha }}" \
+            --region southamerica-west1 \
+            --platform managed \
+            --allow-unauthenticated
