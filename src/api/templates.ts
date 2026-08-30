@@ -400,3 +400,37 @@ export async function downloadOutboundSamplePdf(
   window.URL.revokeObjectURL(url);
   document.body.removeChild(a);
 }
+
+export async function fetchOutboundSampleHtml(
+  docCode: string,
+  options?: {
+    scenario?: string;
+    statusCode?: string;
+  }
+): Promise<string> {
+  const params = new URLSearchParams();
+  params.append('format', 'html');
+  if (options?.scenario) params.append('scenario', options.scenario);
+  if (options?.statusCode) params.append('status_code', options.statusCode);
+
+  const res = await fetch(
+    `${API_BASE_URL}/api/logistics/document-renderer/outbound/${encodeURIComponent(docCode)}/sample?${params.toString()}`,
+    {
+      method: 'POST',
+      credentials: 'include',
+    }
+  );
+
+  if (!res.ok) {
+    let errorMsg = 'Error al renderizar la muestra en HTML.';
+    try {
+      const errorData = await res.json();
+      errorMsg = errorData.message || errorMsg;
+    } catch {
+      // Non-JSON
+    }
+    throw new ApiError(res.status, errorMsg, 'HTML_RENDER_FAILED');
+  }
+
+  return res.text();
+}

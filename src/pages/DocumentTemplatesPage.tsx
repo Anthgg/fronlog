@@ -6,6 +6,7 @@ import {
   fetchReceivingSamplePdfBlob,
   fetchInventorySamplePdfBlob,
   fetchOutboundSamplePdfBlob,
+  fetchOutboundSampleHtml,
   downloadSamplePdf,
   downloadOutboundSamplePdf,
   downloadPurchasingSamplePdf,
@@ -76,6 +77,7 @@ export default function DocumentTemplatesPage() {
   const [previewScenario, setPreviewScenario] = useState<string>('basic');
   const [previewRows, setPreviewRows] = useState<number>(10);
   const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  const [htmlContent, setHtmlContent] = useState<string | null>(null);
   const [loadingPdf, setLoadingPdf] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -116,10 +118,12 @@ export default function DocumentTemplatesPage() {
       const invCode = INVENTORY_DOC_MAP[templateKey];
 
       if (outCode) {
-        blobUrl = await fetchOutboundSamplePdfBlob(outCode, {
-          scenario,
-          statusCode: status,
-        });
+        const [pdfUrl, html] = await Promise.all([
+          fetchOutboundSamplePdfBlob(outCode, { scenario, statusCode: status }),
+          fetchOutboundSampleHtml(outCode, { scenario, statusCode: status }),
+        ]);
+        blobUrl = pdfUrl;
+        setHtmlContent(html);
       } else if (invCode) {
         blobUrl = await fetchInventorySamplePdfBlob(invCode, {
           scenario,
@@ -190,6 +194,7 @@ export default function DocumentTemplatesPage() {
     if (pdfBlobUrl) {
       window.URL.revokeObjectURL(pdfBlobUrl);
       setPdfBlobUrl(null);
+      setHtmlContent(null);
     }
   };
 
@@ -717,6 +722,12 @@ export default function DocumentTemplatesPage() {
                 >
                   Compilando documento PDF con WeasyPrint 69.0...
                 </div>
+              ) : htmlContent ? (
+                <iframe
+                  srcDoc={htmlContent}
+                  title="Document Preview"
+                  style={{ width: '100%', height: '100%', border: 'none', backgroundColor: '#ffffff' }}
+                />
               ) : pdfBlobUrl ? (
                 <iframe
                   src={pdfBlobUrl}
