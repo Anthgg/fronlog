@@ -4,9 +4,11 @@ import {
   fetchSamplePdfBlob,
   fetchPurchasingSamplePdfBlob,
   fetchReceivingSamplePdfBlob,
+  fetchInventorySamplePdfBlob,
   downloadSamplePdf,
   downloadPurchasingSamplePdf,
   downloadReceivingSamplePdf,
+  downloadInventorySamplePdf,
   TemplateManifest,
 } from '../api/templates';
 import { getDocumentTypes, DocumentType } from '../api/documents';
@@ -29,6 +31,18 @@ const RECEIVING_DOC_MAP: Record<string, string> = {
   receiving_difference_v1: 'RDIFF',
   receiving_diff_v1: 'RDIFF',
   non_conformity_v1: 'NC',
+};
+
+const INVENTORY_DOC_MAP: Record<string, string> = {
+  location_label_v1: 'LBL',
+  inventory_movement_v1: 'MOV',
+  inventory_adjustment_v1: 'INV_ADJ',
+  physical_count_v1: 'CNT',
+  stock_count_v1: 'CNT',
+  count_difference_v1: 'CDIFF',
+  warehouse_transfer_v1: 'TRF',
+  transfer_request_v1: 'TRF',
+  transfer_receipt_v1: 'TRF_REC',
 };
 
 export default function DocumentTemplatesPage() {
@@ -81,8 +95,14 @@ export default function DocumentTemplatesPage() {
       let blobUrl = '';
       const purchCode = PURCHASING_DOC_MAP[templateKey];
       const recvCode = RECEIVING_DOC_MAP[templateKey];
+      const invCode = INVENTORY_DOC_MAP[templateKey];
 
-      if (recvCode) {
+      if (invCode) {
+        blobUrl = await fetchInventorySamplePdfBlob(invCode, {
+          scenario,
+          statusCode: status,
+        });
+      } else if (recvCode) {
         blobUrl = await fetchReceivingSamplePdfBlob(recvCode, {
           scenario,
           statusCode: status,
@@ -113,7 +133,14 @@ export default function DocumentTemplatesPage() {
   const handleOpenPreview = (templateKey: string) => {
     setSelectedTemplateKey(templateKey);
     let defaultStatus = 'DRAFT';
-    if (templateKey === 'arrival_appointment_v1') defaultStatus = 'SCHEDULED';
+    if (templateKey === 'location_label_v1') defaultStatus = 'ACTIVE';
+    else if (templateKey === 'inventory_movement_v1') defaultStatus = 'EXECUTED';
+    else if (templateKey === 'inventory_adjustment_v1') defaultStatus = 'APPROVED';
+    else if (templateKey === 'physical_count_v1' || templateKey === 'stock_count_v1') defaultStatus = 'IN_PROGRESS';
+    else if (templateKey === 'count_difference_v1') defaultStatus = 'DRAFT';
+    else if (templateKey === 'warehouse_transfer_v1' || templateKey === 'transfer_request_v1') defaultStatus = 'IN_TRANSIT';
+    else if (templateKey === 'transfer_receipt_v1') defaultStatus = 'RECEIVED';
+    else if (templateKey === 'arrival_appointment_v1') defaultStatus = 'SCHEDULED';
     else if (templateKey === 'gate_control_v1') defaultStatus = 'INSIDE';
     else if (templateKey === 'receiving_report_v1') defaultStatus = 'COMPLETED';
     else if (templateKey === 'goods_receipt_v1' || templateKey === 'non_conformity_v1') defaultStatus = 'ISSUED';
@@ -140,8 +167,15 @@ export default function DocumentTemplatesPage() {
     try {
       const purchCode = PURCHASING_DOC_MAP[selectedTemplateKey];
       const recvCode = RECEIVING_DOC_MAP[selectedTemplateKey];
+      const invCode = INVENTORY_DOC_MAP[selectedTemplateKey];
 
-      if (recvCode) {
+      if (invCode) {
+        await downloadInventorySamplePdf(invCode, {
+          scenario: previewScenario,
+          statusCode: previewStatus,
+          filename: `muestra_${invCode.toLowerCase()}_${previewScenario}_${previewStatus.toLowerCase()}.pdf`,
+        });
+      } else if (recvCode) {
         await downloadReceivingSamplePdf(recvCode, {
           scenario: previewScenario,
           statusCode: previewStatus,
@@ -174,6 +208,7 @@ export default function DocumentTemplatesPage() {
     return tpl.family.toUpperCase() === selectedFamilyFilter;
   });
 
+  const isInventory = Boolean(INVENTORY_DOC_MAP[selectedTemplateKey]);
   const isReceiving = Boolean(RECEIVING_DOC_MAP[selectedTemplateKey]);
   const isPurchasing = Boolean(PURCHASING_DOC_MAP[selectedTemplateKey]);
 
@@ -195,12 +230,12 @@ export default function DocumentTemplatesPage() {
                 border: '1px solid #bfdbfe',
               }}
             >
-              Fase 016 (Recepción e Ingreso)
+              Fase 017 (Inventario y Almacén)
             </span>
           </div>
           <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>
             Motor central de plantillas HTML/CSS compiladas en backend a PDF A4 mediante WeasyPrint 69.0,
-            con snapshots inmutables SHA-256, códigos QR técnicos y paquetes documentales de Compras (F015) y Recepción (F016).
+            con snapshots inmutables SHA-256, códigos QR técnicos y paquetes documentales de Compras (F015), Recepción (F016) e Inventario (F017).
           </p>
         </div>
 
@@ -225,9 +260,15 @@ export default function DocumentTemplatesPage() {
       {/* Metric Cards */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Inventario (F017)</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#059669', marginTop: '6px' }}>7 Plantillas Oficiales</div>
+          <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>✓ LBL, MOV, ADJ, CNT, CDIFF, TRF, TREC</div>
+        </div>
+
+        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Recepción (F016)</div>
           <div style={{ fontSize: '22px', fontWeight: 700, color: '#0284c7', marginTop: '6px' }}>6 Plantillas de Ingreso</div>
-          <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>✓ ARR, CPV, REC, GRN, RDIFF, NC</div>
+          <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>✓ ARR, CPV, REC, GRN, RDIFF, NC</div>
         </div>
 
         <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
@@ -247,6 +288,7 @@ export default function DocumentTemplatesPage() {
       <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         {[
           { id: 'ALL', label: 'Todas las Plantillas' },
+          { id: 'INVENTORY', label: 'Inventario y Almacén (F017)' },
           { id: 'RECEIVING', label: 'Recepción e Ingresos (F016)' },
           { id: 'PURCHASING', label: 'Compras y Adquisiciones (F015)' },
           { id: 'BASE', label: 'Plantillas Base Universales' },
@@ -548,7 +590,7 @@ export default function DocumentTemplatesPage() {
                 </select>
               </div>
 
-              {isReceiving || isPurchasing ? (
+              {isInventory || isReceiving || isPurchasing ? (
                 <div>
                   <label style={{ fontWeight: 600, color: '#334155', marginRight: '6px' }}>Escenario de Prueba:</label>
                   <select
@@ -561,8 +603,12 @@ export default function DocumentTemplatesPage() {
                     style={{ padding: '5px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                   >
                     <option value="basic">Escenario Básico (Estándar)</option>
+                    {isInventory && selectedTemplateKey.includes('count') && (
+                      <option value="blind">👁️ Conteo Ciego (Blind Count - Saldo oculto)</option>
+                    )}
                     <option value="multipage">Multipágina (50 ítems)</option>
                     <option value="long_text">Texto Largo / Justificación Extensa</option>
+                    {isInventory && <option value="difference">Con Desviaciones / Discrepancias</option>}
                     {isReceiving && <option value="observed">Observado / Diferencias de Descarga</option>}
                     {isReceiving && <option value="partial">Recepción Parcial de Carga</option>}
                   </select>
