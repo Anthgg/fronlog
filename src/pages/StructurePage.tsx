@@ -601,9 +601,9 @@ export const StructurePage: React.FC = () => {
 
       {/* Modal - Create Organization */}
       {showOrgModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '400px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 16px 0' }}>Nueva Organización</h3>
+        <div className="admin-modal" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="admin-modal__panel" role="dialog" aria-modal="true" aria-labelledby="create-organization-title" style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '400px', maxWidth: '90%' }}>
+            <h3 id="create-organization-title" style={{ margin: '0 0 16px 0' }}>Nueva Organización</h3>
             <form onSubmit={handleCreateOrg}>
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Código *</label>
@@ -658,9 +658,9 @@ export const StructurePage: React.FC = () => {
 
       {/* Modal - Create Branch */}
       {showBranchModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '480px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 16px 0' }}>Nueva Sede en {selectedOrg?.name}</h3>
+        <div className="admin-modal" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="admin-modal__panel" role="dialog" aria-modal="true" aria-labelledby="create-branch-title" style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '480px', maxWidth: '90%' }}>
+            <h3 id="create-branch-title" style={{ margin: '0 0 16px 0' }}>Nueva Sede en {selectedOrg?.name}</h3>
             <form onSubmit={handleCreateBranch}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                 <div>
@@ -781,9 +781,9 @@ export const StructurePage: React.FC = () => {
 
       {/* Modal - Create Warehouse */}
       {showWarehouseModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '480px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 16px 0' }}>Nuevo Almacén en {selectedBranch?.name}</h3>
+        <div className="admin-modal" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="admin-modal__panel" role="dialog" aria-modal="true" aria-labelledby="create-warehouse-title" style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '480px', maxWidth: '90%' }}>
+            <h3 id="create-warehouse-title" style={{ margin: '0 0 16px 0' }}>Nuevo Almacén en {selectedBranch?.name}</h3>
             <form onSubmit={handleCreateWarehouse}>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '12px', marginBottom: '12px' }}>
                 <div>

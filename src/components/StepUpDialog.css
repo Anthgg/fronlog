@@ -250,3 +250,120 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Security verification is a full work view, not a floating card. */
+.step-up__backdrop {
+  align-items: stretch;
+  justify-items: stretch;
+  padding: 0;
+  overflow-y: auto;
+  background: #f4f5f6;
+  backdrop-filter: none;
+}
+
+.step-up {
+  width: 100%;
+  min-height: 100dvh;
+  padding: clamp(1.5rem, 5vw, 4rem);
+  color: #171a1f;
+  background: #ffffff;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.step-up__header,
+.step-up__description,
+.step-up__alert,
+.step-up__method,
+.step-up form {
+  width: min(100%, 42rem);
+  margin-right: auto;
+  margin-left: auto;
+}
+
+.step-up__header {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #d8dbde;
+}
+
+.step-up__icon {
+  color: #ffffff;
+  background: #20252b;
+  border-color: #20252b;
+  border-radius: 0.2rem;
+}
+
+.step-up__eyebrow,
+.step-up__field label {
+  color: #64696e;
+}
+
+.step-up h2 {
+  color: #171a1f;
+}
+
+.step-up__description {
+  padding: 0.9rem 0;
+  color: #555a60;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #d8dbde;
+  border-radius: 0;
+}
+
+.step-up__method {
+  background: #ffffff;
+  border-color: #c5c9cc;
+  border-radius: 0.2rem;
+}
+
+.step-up__method button {
+  color: #555a60;
+  background: #ffffff;
+  border-radius: 0.15rem;
+}
+
+.step-up__method button:hover {
+  color: #171a1f;
+  background: #eceeef;
+}
+
+.step-up__method button.is-active {
+  color: #ffffff;
+  background: #20252b;
+  border-color: #20252b;
+}
+
+.step-up__field input {
+  color: #171a1f;
+  background: #ffffff;
+  border-color: #aeb3b8;
+  border-radius: 0.2rem;
+}
+
+.step-up__field input:focus {
+  border-color: #171a1f;
+  box-shadow: 0 0 0 2px rgba(23, 26, 31, 0.12);
+}
+
+.step-up__button {
+  border-radius: 0.2rem;
+}
+
+.step-up__button--secondary {
+  color: #30353a;
+  background: #ffffff;
+  border-color: #aeb3b8;
+}
+
+.step-up__button--primary {
+  color: #ffffff;
+  background: #20252b;
+  border-color: #20252b;
+}
+
+.step-up__button--primary:hover:not(:disabled) {
+  background: #0f1215;
+  border-color: #0f1215;
+}

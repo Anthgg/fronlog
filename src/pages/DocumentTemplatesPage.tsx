@@ -5,7 +5,9 @@ import {
   fetchPurchasingSamplePdfBlob,
   fetchReceivingSamplePdfBlob,
   fetchInventorySamplePdfBlob,
+  fetchOutboundSamplePdfBlob,
   downloadSamplePdf,
+  downloadOutboundSamplePdf,
   downloadPurchasingSamplePdf,
   downloadReceivingSamplePdf,
   downloadInventorySamplePdf,
@@ -13,6 +15,7 @@ import {
 } from '../api/templates';
 import { getDocumentTypes, DocumentType } from '../api/documents';
 import { ApiError } from '../api/client';
+import './DocumentModules.css';
 
 const PURCHASING_DOC_MAP: Record<string, string> = {
   purchase_requisition_v1: 'REQ',
@@ -31,6 +34,20 @@ const RECEIVING_DOC_MAP: Record<string, string> = {
   receiving_difference_v1: 'RDIFF',
   receiving_diff_v1: 'RDIFF',
   non_conformity_v1: 'NC',
+};
+
+
+const OUTBOUND_DOC_MAP: Record<string, string> = {
+  outbound_request_v1: 'OUT_REQ',
+  outbound_order_v1: 'ODS',
+  picking_list_v1: 'PICK',
+  picking_sheet_v1: 'PICK',
+  packing_list_v1: 'PACK',
+  manifest_v1: 'MNF',
+  cargo_manifest_v1: 'MNF',
+  dispatch_report_v1: 'DSP',
+  dispatch_guide_v1: 'DSP',
+  seal_control_v1: 'SEAL',
 };
 
 const INVENTORY_DOC_MAP: Record<string, string> = {
@@ -93,11 +110,17 @@ export default function DocumentTemplatesPage() {
         window.URL.revokeObjectURL(pdfBlobUrl);
       }
       let blobUrl = '';
+      const outCode = OUTBOUND_DOC_MAP[templateKey];
       const purchCode = PURCHASING_DOC_MAP[templateKey];
       const recvCode = RECEIVING_DOC_MAP[templateKey];
       const invCode = INVENTORY_DOC_MAP[templateKey];
 
-      if (invCode) {
+      if (outCode) {
+        blobUrl = await fetchOutboundSamplePdfBlob(outCode, {
+          scenario,
+          statusCode: status,
+        });
+      } else if (invCode) {
         blobUrl = await fetchInventorySamplePdfBlob(invCode, {
           scenario,
           statusCode: status,
@@ -133,7 +156,14 @@ export default function DocumentTemplatesPage() {
   const handleOpenPreview = (templateKey: string) => {
     setSelectedTemplateKey(templateKey);
     let defaultStatus = 'DRAFT';
-    if (templateKey === 'location_label_v1') defaultStatus = 'ACTIVE';
+    if (templateKey === 'outbound_request_v1') defaultStatus = 'READY';
+    else if (templateKey === 'outbound_order_v1') defaultStatus = 'CREATED';
+    else if (templateKey === 'picking_list_v1' || templateKey === 'picking_sheet_v1') defaultStatus = 'PICKING';
+    else if (templateKey === 'packing_list_v1') defaultStatus = 'SEALED';
+    else if (templateKey === 'manifest_v1' || templateKey === 'cargo_manifest_v1') defaultStatus = 'LOADED';
+    else if (templateKey === 'dispatch_report_v1' || templateKey === 'dispatch_guide_v1') defaultStatus = 'EMITTED';
+    else if (templateKey === 'seal_control_v1') defaultStatus = 'ISSUED';
+    else if (templateKey === 'location_label_v1') defaultStatus = 'ACTIVE';
     else if (templateKey === 'inventory_movement_v1') defaultStatus = 'EXECUTED';
     else if (templateKey === 'inventory_adjustment_v1') defaultStatus = 'APPROVED';
     else if (templateKey === 'physical_count_v1' || templateKey === 'stock_count_v1') defaultStatus = 'IN_PROGRESS';
@@ -165,11 +195,18 @@ export default function DocumentTemplatesPage() {
 
   const handleDownload = async () => {
     try {
+      const outCode = OUTBOUND_DOC_MAP[selectedTemplateKey];
       const purchCode = PURCHASING_DOC_MAP[selectedTemplateKey];
       const recvCode = RECEIVING_DOC_MAP[selectedTemplateKey];
       const invCode = INVENTORY_DOC_MAP[selectedTemplateKey];
 
-      if (invCode) {
+      if (outCode) {
+        await downloadOutboundSamplePdf(outCode, {
+          scenario: previewScenario,
+          statusCode: previewStatus,
+          filename: `muestra_${outCode.toLowerCase()}_${previewScenario}_${previewStatus.toLowerCase()}.pdf`,
+        });
+      } else if (invCode) {
         await downloadInventorySamplePdf(invCode, {
           scenario: previewScenario,
           statusCode: previewStatus,
@@ -208,17 +245,18 @@ export default function DocumentTemplatesPage() {
     return tpl.family.toUpperCase() === selectedFamilyFilter;
   });
 
+  const isOutbound = Boolean(OUTBOUND_DOC_MAP[selectedTemplateKey]);
   const isInventory = Boolean(INVENTORY_DOC_MAP[selectedTemplateKey]);
   const isReceiving = Boolean(RECEIVING_DOC_MAP[selectedTemplateKey]);
   const isPurchasing = Boolean(PURCHASING_DOC_MAP[selectedTemplateKey]);
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1300px', margin: '0 auto', fontFamily: 'system-ui, sans-serif' }}>
+    <section className="document-module document-templates" aria-labelledby="document-templates-title">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+      <div className="dm-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <h1 style={{ margin: 0, fontSize: '24px', color: '#0f172a' }}>Plantillas Documentales y Renderizado PDF</h1>
+            <h1 id="document-templates-title" style={{ margin: 0, fontSize: '24px', color: '#0f172a' }}>Plantillas Documentales y Renderizado PDF</h1>
             <span
               style={{
                 backgroundColor: '#dbeafe',
@@ -230,16 +268,17 @@ export default function DocumentTemplatesPage() {
                 border: '1px solid #bfdbfe',
               }}
             >
-              Fase 017 (Inventario y Almacén)
+              Fase 018 (Salida y Despacho)
             </span>
           </div>
           <p style={{ margin: '6px 0 0 0', color: '#64748b', fontSize: '14px' }}>
             Motor central de plantillas HTML/CSS compiladas en backend a PDF A4 mediante WeasyPrint 69.0,
-            con snapshots inmutables SHA-256, códigos QR técnicos y paquetes documentales de Compras (F015), Recepción (F016) e Inventario (F017).
+            con snapshots inmutables SHA-256, códigos QR técnicos y paquetes documentales de Compras (F015), Recepción (F016) Inventario (F017) y Salida/Despacho (F018).
           </p>
         </div>
 
         <button
+          className="dm-button dm-button--primary"
           onClick={() => handleOpenPreview('receiving_report_v1')}
           style={{
             backgroundColor: '#0284c7',
@@ -258,26 +297,32 @@ export default function DocumentTemplatesPage() {
       </div>
 
       {/* Metric Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
-        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+      <div className="dm-metrics" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+        <div className="dm-metric" style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+          <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Salidas (F018)</div>
+          <div style={{ fontSize: '22px', fontWeight: 700, color: '#0369a1', marginTop: '6px' }}>7 Plantillas Oficiales</div>
+          <div style={{ fontSize: '12px', color: '#0284c7', marginTop: '4px' }}>✓ PED, ODS, PICK, PACK, MNF, DSP, SEAL</div>
+        </div>
+
+        <div className="dm-metric" style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Inventario (F017)</div>
           <div style={{ fontSize: '22px', fontWeight: 700, color: '#059669', marginTop: '6px' }}>7 Plantillas Oficiales</div>
           <div style={{ fontSize: '12px', color: '#10b981', marginTop: '4px' }}>✓ LBL, MOV, ADJ, CNT, CDIFF, TRF, TREC</div>
         </div>
 
-        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="dm-metric" style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Recepción (F016)</div>
           <div style={{ fontSize: '22px', fontWeight: 700, color: '#0284c7', marginTop: '6px' }}>6 Plantillas de Ingreso</div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>✓ ARR, CPV, REC, GRN, RDIFF, NC</div>
         </div>
 
-        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="dm-metric" style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Paquete de Compras (F015)</div>
           <div style={{ fontSize: '22px', fontWeight: 700, color: '#0f172a', marginTop: '6px' }}>6 Plantillas Oficiales</div>
           <div style={{ fontSize: '12px', color: '#64748b', marginTop: '4px' }}>✓ REQ, RFQ, CMP, PO, POA, PSC</div>
         </div>
 
-        <div style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+        <div className="dm-metric" style={{ backgroundColor: '#ffffff', padding: '18px', borderRadius: '8px', border: '1px solid #e2e8f0', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
           <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase' }}>Seguridad & Hashing</div>
           <div style={{ fontSize: '22px', fontWeight: 700, color: '#7c3aed', marginTop: '6px' }}>SHA-256 Dual-Stage</div>
           <div style={{ fontSize: '12px', color: '#7c3aed', marginTop: '4px' }}>Snapshot Hash (QR) + PDF Hash</div>
@@ -285,15 +330,17 @@ export default function DocumentTemplatesPage() {
       </div>
 
       {/* Filter Tabs */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+      <div className="dm-pills" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
         {[
           { id: 'ALL', label: 'Todas las Plantillas' },
+          { id: 'OUTBOUND', label: 'Salida y Despacho (F018)' },
           { id: 'INVENTORY', label: 'Inventario y Almacén (F017)' },
           { id: 'RECEIVING', label: 'Recepción e Ingresos (F016)' },
           { id: 'PURCHASING', label: 'Compras y Adquisiciones (F015)' },
           { id: 'BASE', label: 'Plantillas Base Universales' },
         ].map((tab) => (
           <button
+            className={`dm-pill ${selectedFamilyFilter === tab.id ? 'is-active' : ''}`}
             key={tab.id}
             onClick={() => setSelectedFamilyFilter(tab.id)}
             style={{
@@ -313,9 +360,9 @@ export default function DocumentTemplatesPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '48px', color: '#64748b' }}>Cargando catálogo de plantillas...</div>
+        <div className="dm-state" style={{ textAlign: 'center', padding: '48px', color: '#64748b' }}>Cargando catálogo de plantillas...</div>
       ) : error ? (
-        <div style={{ padding: '16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '20px' }}>{error}</div>
+        <div className="dm-alert dm-alert--error" role="alert" style={{ padding: '16px', backgroundColor: '#fee2e2', color: '#991b1b', borderRadius: '6px', marginBottom: '20px' }}>{error}</div>
       ) : (
         <div style={{ display: 'grid', gap: '32px' }}>
           {/* Section: Manifiestos de Plantillas Registradas */}
@@ -323,7 +370,7 @@ export default function DocumentTemplatesPage() {
             <h2 style={{ fontSize: '18px', color: '#0f172a', marginBottom: '12px' }}>
               Registro Canónico de Plantillas ({filteredTemplates.length})
             </h2>
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div className="dm-table-card dm-table-scroll" style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
@@ -379,6 +426,7 @@ export default function DocumentTemplatesPage() {
                       </td>
                       <td style={{ padding: '12px 16px', textAlign: 'right' }}>
                         <button
+                          className="dm-button dm-button--primary dm-button--small"
                           onClick={() => handleOpenPreview(tpl.template_key)}
                           style={{
                             backgroundColor: '#2563eb',
@@ -406,7 +454,7 @@ export default function DocumentTemplatesPage() {
             <h2 style={{ fontSize: '18px', color: '#0f172a', marginBottom: '12px' }}>
               Asignación en Catálogo Documental (F011)
             </h2>
-            <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
+            <div className="dm-table-card dm-table-scroll" style={{ backgroundColor: '#ffffff', borderRadius: '8px', border: '1px solid #e2e8f0', overflow: 'hidden', boxShadow: '0 1px 3px rgba(0,0,0,0.05)' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '14px' }}>
                 <thead>
                   <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569' }}>
@@ -422,6 +470,8 @@ export default function DocumentTemplatesPage() {
                   {docTypes
                     .filter((dt) => {
                       if (selectedFamilyFilter === 'ALL') return true;
+                      if (selectedFamilyFilter === 'OUTBOUND') return ['OUT_REQ', 'ODS', 'PICK', 'PACK', 'MNF', 'DSP', 'SEAL'].includes(dt.code);
+                      if (selectedFamilyFilter === 'INVENTORY') return ['LBL', 'MOV', 'INV_ADJ', 'CNT', 'CDIFF', 'TRF', 'TRF_REC'].includes(dt.code);
                       if (selectedFamilyFilter === 'RECEIVING') return ['ARR', 'CPV', 'REC', 'GRN', 'RDIFF', 'NC'].includes(dt.code);
                       if (selectedFamilyFilter === 'PURCHASING') return ['REQ', 'RFQ', 'CMP', 'PO', 'POA', 'PSC'].includes(dt.code);
                       return true;
@@ -464,6 +514,7 @@ export default function DocumentTemplatesPage() {
       {/* Modal Preview PDF */}
       {showPreviewModal && (
         <div
+          className="dm-overlay"
           style={{
             position: 'fixed',
             top: 0,
@@ -479,6 +530,10 @@ export default function DocumentTemplatesPage() {
           }}
         >
           <div
+            className="dm-modal dm-modal--preview"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="template-preview-title"
             style={{
               backgroundColor: '#ffffff',
               borderRadius: '12px',
@@ -493,6 +548,7 @@ export default function DocumentTemplatesPage() {
           >
             {/* Modal Header */}
             <div
+              className="dm-modal-header"
               style={{
                 padding: '16px 24px',
                 borderBottom: '1px solid #e2e8f0',
@@ -503,7 +559,7 @@ export default function DocumentTemplatesPage() {
               }}
             >
               <div>
-                <h3 style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>
+                <h3 id="template-preview-title" style={{ margin: 0, fontSize: '18px', color: '#0f172a' }}>
                   Vista Previa PDF: <code>{selectedTemplateKey}</code>
                 </h3>
                 <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#64748b' }}>
@@ -511,8 +567,9 @@ export default function DocumentTemplatesPage() {
                 </p>
               </div>
 
-              <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+              <div className="dm-modal-actions" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                 <button
+                  className="dm-button dm-button--primary"
                   onClick={handleDownload}
                   disabled={loadingPdf}
                   style={{
@@ -529,6 +586,7 @@ export default function DocumentTemplatesPage() {
                   📥 Descargar PDF
                 </button>
                 <button
+                  className="dm-button dm-button--secondary"
                   onClick={handleClosePreview}
                   style={{
                     backgroundColor: '#e2e8f0',
@@ -548,6 +606,7 @@ export default function DocumentTemplatesPage() {
 
             {/* Controls Bar */}
             <div
+              className="dm-preview-controls"
               style={{
                 padding: '12px 24px',
                 borderBottom: '1px solid #e2e8f0',
@@ -590,7 +649,7 @@ export default function DocumentTemplatesPage() {
                 </select>
               </div>
 
-              {isInventory || isReceiving || isPurchasing ? (
+              {isOutbound || isInventory || isReceiving || isPurchasing ? (
                 <div>
                   <label style={{ fontWeight: 600, color: '#334155', marginRight: '6px' }}>Escenario de Prueba:</label>
                   <select
@@ -603,10 +662,14 @@ export default function DocumentTemplatesPage() {
                     style={{ padding: '5px 8px', borderRadius: '4px', border: '1px solid #cbd5e1' }}
                   >
                     <option value="basic">Escenario Básico (Estándar)</option>
+                    {isOutbound && <option value="high_priority">🚨 Prioridad Alta / Urgente (OUT_REQ/ODS)</option>}
+                    {isOutbound && <option value="multi_package">📦 Múltiples Bultos (PACK)</option>}
+                    {isOutbound && <option value="with_difference">⚠️ Con Discrepancias (DSP)</option>}
+                    {isOutbound && <option value="replacement">🔒 Reemplazo de Precinto (SEAL)</option>}
                     {isInventory && selectedTemplateKey.includes('count') && (
                       <option value="blind">👁️ Conteo Ciego (Blind Count - Saldo oculto)</option>
                     )}
-                    <option value="multipage">Multipágina (50 ítems)</option>
+                    <option value="multipage">Multipágina (50 ítems / bultos)</option>
                     <option value="long_text">Texto Largo / Justificación Extensa</option>
                     {isInventory && <option value="difference">Con Desviaciones / Discrepancias</option>}
                     {isReceiving && <option value="observed">Observado / Diferencias de Descarga</option>}
@@ -639,7 +702,7 @@ export default function DocumentTemplatesPage() {
             </div>
 
             {/* PDF Viewer Body */}
-            <div style={{ flex: 1, backgroundColor: '#525659', position: 'relative' }}>
+            <div className="dm-preview-frame" style={{ flex: 1, backgroundColor: '#525659', position: 'relative' }}>
               {loadingPdf ? (
                 <div
                   style={{
@@ -677,6 +740,6 @@ export default function DocumentTemplatesPage() {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }

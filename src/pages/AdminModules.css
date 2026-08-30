@@ -903,3 +903,269 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Monochrome enterprise theme: flat sections and full-page CRUD workspaces. */
+.admin-page {
+  --admin-bg: #f4f5f6;
+  --admin-surface: #ffffff;
+  --admin-surface-raised: #ffffff;
+  --admin-surface-soft: #f1f2f3;
+  --admin-border: #d8dbde;
+  --admin-border-strong: #aeb3b8;
+  --admin-text: #171a1f;
+  --admin-text-soft: #30353a;
+  --admin-muted: #64696e;
+  --admin-primary: #20252b;
+  --admin-primary-hover: #0f1215;
+  --admin-primary-soft: #eceeef;
+  --admin-success: #2e5d44;
+  --admin-success-soft: #f2f6f3;
+  --admin-warning: #765b20;
+  --admin-warning-soft: #faf8f1;
+  --admin-danger: #8f2d2d;
+  --admin-danger-soft: #fbf3f3;
+  padding: 1.5rem clamp(1rem, 2.5vw, 2rem) 2.5rem !important;
+  color: var(--admin-text) !important;
+  background: transparent !important;
+}
+
+.admin-page h1,
+.admin-page h2,
+.admin-page h3,
+.admin-page h4,
+.admin-page strong {
+  color: var(--admin-text) !important;
+}
+
+.admin-page p {
+  color: var(--admin-muted) !important;
+}
+
+.admin-header {
+  padding-bottom: 1rem !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+}
+
+.admin-header__eyebrow {
+  color: #5f6469 !important;
+}
+
+.admin-page button {
+  color: #252a2f !important;
+  background: #ffffff !important;
+  border-color: #aeb3b8 !important;
+  border-radius: 0.2rem !important;
+  box-shadow: none !important;
+}
+
+.admin-page button:hover:not(:disabled) {
+  color: #111418 !important;
+  background: #eceeef !important;
+  border-color: #656a70 !important;
+}
+
+.admin-page .admin-button--primary {
+  color: #ffffff !important;
+  background: #20252b !important;
+  border-color: #20252b !important;
+}
+
+.admin-page .admin-button--primary:hover:not(:disabled) {
+  background: #0f1215 !important;
+  border-color: #0f1215 !important;
+}
+
+.admin-page .admin-button--success {
+  color: #2e5d44 !important;
+  background: #ffffff !important;
+  border-color: #8fa698 !important;
+}
+
+.admin-page .admin-button--danger {
+  color: #7f2424 !important;
+  background: #ffffff !important;
+  border-color: #a86c6c !important;
+}
+
+.admin-page input:not([type="checkbox"]):not([type="radio"]),
+.admin-page select,
+.admin-page textarea {
+  color: var(--admin-text) !important;
+  background: #ffffff !important;
+  border-color: var(--admin-border-strong) !important;
+  border-radius: 0.2rem !important;
+  box-shadow: none !important;
+  color-scheme: light;
+}
+
+.admin-card,
+.admin-table-card,
+.admin-filter-bar,
+.admin-tree,
+.admin-toolbar,
+.admin-role-card,
+.admin-permission-card,
+.admin-status-card,
+.admin-empty-state {
+  color: var(--admin-text-soft) !important;
+  background: #ffffff !important;
+  border: 0 !important;
+  border-top: 1px solid var(--admin-border) !important;
+  border-bottom: 1px solid var(--admin-border) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.admin-filter-bar,
+.admin-toolbar {
+  padding: 0.9rem 0 !important;
+  background: transparent !important;
+}
+
+.admin-tabs,
+.admin-subtabs {
+  border-color: var(--admin-border) !important;
+}
+
+.admin-tabs .is-active,
+.admin-subtabs .is-active {
+  color: #ffffff !important;
+  background: #20252b !important;
+  border-color: #20252b !important;
+}
+
+.admin-table-scroll,
+.admin-table-card {
+  background: #ffffff !important;
+}
+
+.admin-table-scroll table,
+.admin-page .admin-table {
+  color: var(--admin-text-soft) !important;
+  background: #ffffff !important;
+}
+
+.admin-table-scroll thead tr,
+.admin-page .admin-table thead tr {
+  color: #4b5055 !important;
+  background: #eceeef !important;
+}
+
+.admin-table-scroll th,
+.admin-table-scroll td,
+.admin-page .admin-table th,
+.admin-page .admin-table td {
+  color: #292e33 !important;
+  border-color: #dfe1e3 !important;
+}
+
+.admin-table-scroll tbody tr:hover,
+.admin-page .admin-table tbody tr:hover {
+  background: #f4f5f6 !important;
+}
+
+.admin-pagination {
+  color: var(--admin-muted) !important;
+  background: #ffffff !important;
+  border-color: var(--admin-border) !important;
+}
+
+.admin-badge {
+  color: #30353a !important;
+  background: #f1f2f3 !important;
+  border-color: #c9cdd0 !important;
+}
+
+.admin-badge--success {
+  color: #2e5d44 !important;
+  background: #f2f6f3 !important;
+  border-color: #a8baae !important;
+}
+
+.admin-badge--warning,
+.admin-badge--info {
+  color: #4a4f54 !important;
+  background: #f1f2f3 !important;
+  border-color: #c9cdd0 !important;
+}
+
+.admin-badge--danger {
+  color: #7f2424 !important;
+  background: #fbf3f3 !important;
+  border-color: #c9a1a1 !important;
+}
+
+.admin-modal {
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 1200 !important;
+  align-items: stretch !important;
+  justify-content: stretch !important;
+  width: 100vw !important;
+  height: 100dvh !important;
+  padding: 0 !important;
+  background: #f4f5f6 !important;
+  backdrop-filter: none !important;
+}
+
+.admin-modal__panel,
+.admin-modal__panel--wide {
+  width: 100% !important;
+  max-width: none !important;
+  height: 100dvh !important;
+  max-height: none !important;
+  margin: 0 !important;
+  padding: 1.5rem clamp(1rem, 2.5vw, 2rem) 2.5rem !important;
+  overflow-y: auto !important;
+  color: var(--admin-text) !important;
+  background: #ffffff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.admin-modal__header {
+  min-height: 3.5rem;
+  padding-bottom: 0.8rem !important;
+  border-bottom: 1px solid var(--admin-border);
+}
+
+.admin-tree {
+  background: #ffffff !important;
+}
+
+.admin-tree-item,
+.admin-tree-leaf {
+  color: var(--admin-text-soft) !important;
+  background: transparent !important;
+  border-radius: 0.2rem !important;
+}
+
+.admin-tree-item:hover,
+.admin-tree-item.is-selected {
+  color: #171a1f !important;
+  background: #eceeef !important;
+  border-color: #c5c9cc !important;
+}
+
+.admin-branch-card,
+.admin-warehouse-row,
+.admin-recovery-grid,
+.admin-status-row,
+.admin-permission-card > div:first-child {
+  color: var(--admin-text-soft) !important;
+  background: #ffffff !important;
+  border-color: var(--admin-border) !important;
+  border-radius: 0 !important;
+}
+
+.admin-security-indicator {
+  color: #171a1f !important;
+  background: #f1f2f3 !important;
+  border-color: #c9cdd0 !important;
+  border-radius: 0.2rem !important;
+}
+
+.admin-status-row span:last-child {
+  color: var(--admin-text) !important;
+}

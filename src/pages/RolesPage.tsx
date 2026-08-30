@@ -12,6 +12,7 @@ import {
   type EndpointPermissionMappingResponse,
 } from '../api/permissions';
 import { structureApi, type OrganizationHierarchyItem } from '../api/structure';
+import './AdminModules.css';
 
 export const RolesPage: React.FC = () => {
   const [roles, setRoles] = useState<RoleResponse[]>([]);
@@ -230,18 +231,18 @@ export const RolesPage: React.FC = () => {
   };
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+    <section className="admin-page admin-roles-page" aria-labelledby="roles-title">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+      <div className="admin-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
         <div>
-          <h1 style={{ margin: '0 0 6px 0', fontSize: '24px', color: '#1e293b' }}>
+          <h1 id="roles-title" style={{ margin: '0 0 6px 0', fontSize: '24px', color: '#1e293b' }}>
             Control de Acceso RBAC & Catálogo Canónico
           </h1>
           <p style={{ margin: 0, color: '#64748b', fontSize: '14px' }}>
             10 Perfiles Canónicos, {permissionsCatalog.length} Permisos por Acción, Matriz de Responsabilidades y Segregación de Funciones (SoD)
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="admin-header__actions" style={{ display: 'flex', gap: '8px' }}>
           <button
             onClick={fetchRolesData}
             style={{
@@ -275,6 +276,7 @@ export const RolesPage: React.FC = () => {
       {/* Success Banner */}
       {successMessage && (
         <div
+          className="admin-alert admin-alert--success"
           style={{
             padding: '12px 16px',
             backgroundColor: '#f0fdf4',
@@ -302,6 +304,7 @@ export const RolesPage: React.FC = () => {
       {/* Error Banner */}
       {errorMessage && (
         <div
+          className="admin-alert admin-alert--error"
           style={{
             padding: '12px 16px',
             backgroundColor: '#fef2f2',
@@ -327,8 +330,9 @@ export const RolesPage: React.FC = () => {
       )}
 
       {/* Top Section Navigation */}
-      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', flexWrap: 'wrap' }}>
+      <div className="admin-tabs" style={{ display: 'flex', gap: '8px', marginBottom: '20px', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', flexWrap: 'wrap' }}>
         <button
+          className={activeSection === 'CATALOG' ? 'is-active' : ''}
           onClick={() => setActiveSection('CATALOG')}
           style={{
             padding: '8px 14px',
@@ -344,6 +348,7 @@ export const RolesPage: React.FC = () => {
           📋 Roles ({roles.length})
         </button>
         <button
+          className={activeSection === 'PERMISSIONS_MATRIX' ? 'is-active' : ''}
           onClick={() => setActiveSection('PERMISSIONS_MATRIX')}
           style={{
             padding: '8px 14px',
@@ -359,6 +364,7 @@ export const RolesPage: React.FC = () => {
           🔑 Asignación de Permisos ({permissionsCatalog.length})
         </button>
         <button
+          className={activeSection === 'RESPONSIBILITIES' ? 'is-active' : ''}
           onClick={() => setActiveSection('RESPONSIBILITIES')}
           style={{
             padding: '8px 14px',
@@ -374,6 +380,7 @@ export const RolesPage: React.FC = () => {
           🛡️ Responsabilidades ({matrixData?.canonical_profiles.length || 10})
         </button>
         <button
+          className={activeSection === 'SOD' ? 'is-active' : ''}
           onClick={() => setActiveSection('SOD')}
           style={{
             padding: '8px 14px',
@@ -389,6 +396,7 @@ export const RolesPage: React.FC = () => {
           ⚖️ Segregación SoD ({matrixData?.sod_conflicts.length || 0})
         </button>
         <button
+          className={activeSection === 'ENDPOINT_MATRIX' ? 'is-active' : ''}
           onClick={() => setActiveSection('ENDPOINT_MATRIX')}
           style={{
             padding: '8px 14px',
@@ -413,8 +421,9 @@ export const RolesPage: React.FC = () => {
           {activeSection === 'CATALOG' && (
             <div>
               {/* Filter Tabs */}
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+              <div className="admin-subtabs" style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
                 <button
+                  className={filterType === 'ALL' ? 'is-active' : ''}
                   onClick={() => setFilterType('ALL')}
                   style={{
                     padding: '6px 14px',
@@ -430,6 +439,7 @@ export const RolesPage: React.FC = () => {
                   Todos ({roles.length})
                 </button>
                 <button
+                  className={filterType === 'SYSTEM' ? 'is-active' : ''}
                   onClick={() => setFilterType('SYSTEM')}
                   style={{
                     padding: '6px 14px',
@@ -445,6 +455,7 @@ export const RolesPage: React.FC = () => {
                   Perfiles del Sistema ({roles.filter((r) => r.is_system).length})
                 </button>
                 <button
+                  className={filterType === 'CUSTOM' ? 'is-active' : ''}
                   onClick={() => setFilterType('CUSTOM')}
                   style={{
                     padding: '6px 14px',
@@ -462,12 +473,13 @@ export const RolesPage: React.FC = () => {
               </div>
 
               {/* Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
+              <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '16px' }}>
                 {filteredRoles.map((role) => {
                   const orgName = organizations.find((o) => o.id === role.organization_id)?.name;
                   return (
                     <div
                       key={role.id}
+                      className="admin-role-card"
                       style={{
                         backgroundColor: '#ffffff',
                         border: '1px solid #e2e8f0',
@@ -644,7 +656,7 @@ export const RolesPage: React.FC = () => {
               )}
 
               {/* Categorized Permissions Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '16px' }}>
+              <div className="admin-permission-list" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(380px, 1fr))', gap: '16px' }}>
                 {categories.map((cat) => {
                   const permsInCat = permissionsCatalog
                     .filter((p) => p.category === cat)
@@ -665,6 +677,7 @@ export const RolesPage: React.FC = () => {
                   return (
                     <div
                       key={cat}
+                      className="admin-permission-card"
                       style={{
                         backgroundColor: '#ffffff',
                         border: '1px solid #e2e8f0',
@@ -766,10 +779,11 @@ export const RolesPage: React.FC = () => {
                 ✓ <strong>10 Perfiles Canónicos Logísticos Validados:</strong> Define el alcance funcional de cada rol sin asignación de permisos individuales directos en código (evaluación RBAC desacoplada por acción).
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
+              <div className="admin-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: '16px' }}>
                 {matrixData?.canonical_profiles.map((p) => (
                   <div
                     key={p.role_code}
+                    className="admin-role-card"
                     style={{
                       backgroundColor: '#ffffff',
                       border: '1px solid #e2e8f0',
@@ -810,7 +824,7 @@ export const RolesPage: React.FC = () => {
                 ⚖️ <strong>Matriz de Segregación de Funciones (SoD):</strong> Identifica incompatibilidades de control interno para prevenir fraude, manipulación de inventarios o conflictos de interés operativos.
               </div>
 
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div className="admin-table-card admin-table-scroll" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left', color: '#475569' }}>
@@ -862,7 +876,7 @@ export const RolesPage: React.FC = () => {
                 🔒 <strong>Matriz Canónica de Seguridad Endpoint ↔ Permiso:</strong> Define formalmente la acción requerida para cada operación REST en las fases F004, F005 y F006, lista para vinculación con sesión en F008.
               </div>
 
-              <div style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
+              <div className="admin-table-card admin-table-scroll" style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px', overflow: 'hidden' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px' }}>
                   <thead>
                     <tr style={{ backgroundColor: '#f8fafc', borderBottom: '1px solid #e2e8f0', textAlign: 'left', color: '#475569' }}>
@@ -926,9 +940,9 @@ export const RolesPage: React.FC = () => {
 
       {/* Modal - Create Role */}
       {showCreateModal && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '460px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 16px 0' }}>Nuevo Rol Personalizado</h3>
+        <div className="admin-modal" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="admin-modal__panel" role="dialog" aria-modal="true" aria-labelledby="create-role-title" style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '460px', maxWidth: '90%' }}>
+            <h3 id="create-role-title" style={{ margin: '0 0 16px 0' }}>Nuevo Rol Personalizado</h3>
             <form onSubmit={handleCreateRole}>
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Código *</label>
@@ -1008,9 +1022,9 @@ export const RolesPage: React.FC = () => {
 
       {/* Modal - Edit Role */}
       {editingRole && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '460px', maxWidth: '90%' }}>
-            <h3 style={{ margin: '0 0 16px 0' }}>Editar Rol: {editingRole.code}</h3>
+        <div className="admin-modal" style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div className="admin-modal__panel" role="dialog" aria-modal="true" aria-labelledby="edit-role-title" style={{ backgroundColor: '#ffffff', borderRadius: '8px', padding: '24px', width: '460px', maxWidth: '90%' }}>
+            <h3 id="edit-role-title" style={{ margin: '0 0 16px 0' }}>Editar Rol: {editingRole.code}</h3>
             <form onSubmit={handleUpdateRole}>
               <div style={{ marginBottom: '12px' }}>
                 <label style={{ display: 'block', fontSize: '13px', marginBottom: '4px', fontWeight: 500 }}>Nombre *</label>
@@ -1059,6 +1073,6 @@ export const RolesPage: React.FC = () => {
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 };
